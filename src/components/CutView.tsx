@@ -10,7 +10,7 @@ import { FlameIcon } from './ui/Icons';
 import { useSlideDir } from '@/lib/useSlideDir';
 import { ConfirmButton } from './ui/ConfirmButton';
 import { ConfirmSheet } from './ui/Sheets';
-import { useEmbers } from './ui/Embers';
+import { VOLCANO_JOURNEY_EVENT } from './VolcanoJourney';
 import { useToast } from './ui/Toast';
 
 type MyBooking = { id: string; start_at: string };
@@ -19,7 +19,6 @@ type MyBooking = { id: string; start_at: string };
 export function CutView({ userId }: { userId: string }) {
   const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
-  const burst = useEmbers();
   const [slots, setSlots] = useState<Slot[]>([]);
   const [mine, setMine] = useState<MyBooking | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -67,7 +66,7 @@ export function CutView({ userId }: { userId: string }) {
     const { error } = await supabase.rpc('book_slot', { p_slot_id: slot.id });
     if (error) toast(friendlyError(error), true);
     else {
-      burst(undefined, 'Bravo pour ta réservation');
+      window.dispatchEvent(new Event(VOLCANO_JOURNEY_EVENT));
       toast('C\'est réservé !');
     }
     await load();

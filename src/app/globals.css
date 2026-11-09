@@ -375,3 +375,12 @@ html[data-dir="-1"] #page > .view-enter[data-leaving] { animation-name: leave-ri
 .slot-row .s.who { flex-basis: 150px; }
 .who-text { flex: 1 1 0; }
 .who-text .row-sub { display: block; margin-left: 0; font-size: 12px; font-weight: 500; }
+
+/* Booking cinematic: the underlying reservation stays available after skipping. */
+.volcano-journey { position: fixed; inset: 0; z-index: 95; background: transparent; }
+.volcano-journey[hidden] { display: none; }
+.volcano-journey canvas { display: block; width: 100%; height: 100%; pointer-events: none; }
+.volcano-journey button { position: absolute; right: max(20px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); border: 1px solid #ffffff45; border-radius: 999px; padding: 12px 18px; color: #fff0d9; background: #110d15cc; font: inherit; cursor: pointer; }
+.volcano-journey button:focus-visible { outline: 2px solid #8fe8ff; outline-offset: 4px; }
+
+.volcano-journey .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
