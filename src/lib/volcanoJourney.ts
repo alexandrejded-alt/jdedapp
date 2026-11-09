@@ -266,13 +266,20 @@ function duel(g: CanvasRenderingContext2D, t: number, portraits: JourneyPortrait
   let lr = 0, rr = 0, lk = 0, rk = 0, guard = 0;
   let jerk = 0;
   let dickSize = 0;
-  let holdHead = false;
-  let headOnGround = false;
-  let headX = 102, headY = -40;
-  let throwHead = false;
+
+  // === États exclusifs de la tête ===
+  // 0 = encore sur le corps
+  // 1 = par terre
+  // 2 = dans la main de JDED
+  // 3 = en train d’être jetée
+  let headState = 0;
+  let headX = 102;
+  let headY = -58;
+  let headRot = 0;
 
   const fighting = t >= 3.7 && t < 7.1;
 
+  // --- Combat classique ---
   if (t >= 3.7 && t < 4.65) {
     const beat = Math.sin((t - 3.7) * 25);
     lx += Math.max(0, beat) * 22;
@@ -303,6 +310,7 @@ function duel(g: CanvasRenderingContext2D, t: number, portraits: JourneyPortrait
     guard = 0.4;
   }
 
+  // Position de base après le combat
   if (t >= 7.1) {
     lx = -70;
     ly = -58;
@@ -310,46 +318,54 @@ function duel(g: CanvasRenderingContext2D, t: number, portraits: JourneyPortrait
     ry = -58;
   }
 
+  // Ciseaux
   giantScissors(g, t);
 
-  // Tête tombe par terre
-  if (t >= CUT_AT) {
-    headOnGround = true;
-    const fall = ease(clamp((t - CUT_AT) / 0.55));
-    headX = 102 + fall * 18;
-    headY = -58 + fall * 95;
+  // ========== GESTION PROPRE DE LA TÊTE ==========
+  if (t >= CUT_AT && t < 10.2) {
+    // 1. Tête tombe par terre
+    headState = 1;
+    const fall = ease(clamp((t - CUT_AT) / 0.6));
+    headX = 102 + fall * 22;
+    headY = -58 + fall * 98;
+    headRot = fall * 1.1;
+  } else if (t >= 10.2 && t < 11.35) {
+    // 2. JDED marche et ramasse la tête
+    headState = 2;
+    const walk = ease(clamp((t - 10.2) / 0.65));
+    lx = -70 + walk * 110;
+    // la tête suit sa main
+    headX = lx + 34;
+    headY = ly - 12;
+    headRot = 0.15;
+  } else if (t >= 11.35) {
+    // 3. Il jette la tête dans la lave (mouvement clean)
+    headState = 3;
+    const throwP = clamp((t - 11.35) / 0.65);
+    const arc = Math.sin(throwP * Math.PI);
+
+    headX = 155 + throwP * 55;
+    headY = -55 - arc * 110 + throwP * throwP * 175;
+    headRot = throwP * 8;
+
+    // petit recul de JDED après le lancer
+    lx = 40 + throwP * 15;
   }
 
-  // Zizi qui pousse + branlette
-  if (t >= 8.55) {
-    dickSize = ease(clamp((t - 8.55) / 0.45));
+  // Zizi + branlette
+  if (t >= 8.5) {
+    dickSize = ease(clamp((t - 8.5) / 0.5));
   }
-  if (t >= 8.7 && t < 10.2) {
-    jerk = ease(clamp((t - 8.7) / 0.35));
+  if (t >= 8.7 && t < 10.15) {
+    jerk = ease(clamp((t - 8.7) / 0.4));
   }
 
   // Gros jet
-  if (t >= 9.25 && t < 11.0) {
-    cumshot(g, lx + 38, ly - 18, t - 9.25, 1);
+  if (t >= 9.2 && t < 10.8) {
+    cumshot(g, lx + 36, ly - 16, t - 9.2, 1);
   }
 
-  // Marche + ramasse la tête
-  if (t >= 10.15 && t < 11.5) {
-    const walk = ease(clamp((t - 10.15) / 0.7));
-    lx = -70 + walk * 95;
-    holdHead = t >= 10.85;
-    if (holdHead) headOnGround = false;
-  }
-
-  // Jette la tête dans la lave
-  if (t >= 11.45) {
-    holdHead = false;
-    throwHead = true;
-    const throwP = clamp((t - 11.45) / 0.55);
-    headX = 130 + throwP * 40;
-    headY = -40 - Math.sin(throwP * Math.PI) * 90 + throwP * throwP * 160;
-  }
-
+  // Motion echoes pendant le combat
   if (fighting) {
     for (let i = 3; i > 0; i--) {
       g.save();
@@ -360,53 +376,56 @@ function duel(g: CanvasRenderingContext2D, t: number, portraits: JourneyPortrait
     }
   }
 
-  // Corps de l'adversaire (sans tête après la coupe)
+  // Corps de l’adversaire (JAMAIS de tête après la coupe)
   if (t < CUT_AT) {
     fighter(g, rx, ry, -1, fighting ? t * 30 + Math.PI : 0, '#ffbf85', portraits.name, portraits.guest, rr, rk, true, guard);
   } else {
-    const dissolve = ease(clamp((t - CUT_AT) / 0.8));
+    const dissolve = ease(clamp((t - CUT_AT) / 0.75));
     if (dissolve < 1) {
       g.save();
       g.globalAlpha *= 1 - dissolve;
-      fighter(g, rx + 12 * dissolve, ry + 8 * dissolve, -1, 0, '#ffbf85', portraits.name, null, 0.1, 0, false);
+      fighter(g, rx + 10 * dissolve, ry + 6 * dissolve, -1, 0, '#ffbf85', portraits.name, null, 0.08, 0, false);
       g.restore();
     }
   }
 
-  // JDED
+  // JDED (on ne lui donne la tête dans la main QUE pendant headState === 2)
   fighter(
     g, lx, ly, 1,
     t * 22,
     '#a0e8ff', 'JDED', portraits.barber,
     lr, lk, true, guard,
-    jerk, dickSize, holdHead
+    jerk, dickSize,
+    headState === 2   // ← seulement ici
   );
 
-  // Tête au sol ou en l’air
-  if (headOnGround || throwHead) {
+  // ===== DESSIN UNIQUE DE LA TÊTE =====
+  if (headState === 1 || headState === 3) {
+    // Par terre ou en vol (pas dans la main)
     g.save();
     g.translate(headX, headY);
-    g.rotate(throwHead ? (t - 11.45) * 6 : 0.4);
+    g.rotate(headRot);
     portrait(g, '#ffbf85', portraits.name, portraits.guest, false);
 
-    // Lait qui coule sur la tête
-    if (t > 9.4 && t < 11.0 && headOnGround) {
-      const milk = t - 9.4;
-      for (let i = 0; i < 6; i++) {
-        ellipse(g, (noise(i) - 0.5) * 16, 12 + milk * 28 + i * 3, 2.8, 3.5, '#fff8e0');
+    // Lait qui coule quand elle est au sol
+    if (headState === 1 && t > 9.3) {
+      const milk = t - 9.3;
+      for (let i = 0; i < 5; i++) {
+        ellipse(g, (noise(i) - 0.5) * 14, 10 + milk * 22 + i * 4, 2.6, 3.2, '#fff8e0');
       }
     }
     g.restore();
   }
 
+  // Impacts
   for (const [at, x, y] of [[3.94, 0, -123], [4.19, 7, -120], [4.44, 0, -120], [5.04, 40, -108], [5.94, 0, -220], [6.59, 25, -120]]) {
     impact(g, x, y, t - at);
   }
   impact(g, 102, -110, t - CUT_AT, true);
 
-  if (t >= CUT_AT && t < CUT_AT + 0.55) {
+  if (t >= CUT_AT && t < CUT_AT + 0.5) {
     g.save();
-    g.globalAlpha *= 1 - ease((t - CUT_AT) / 0.55);
+    g.globalAlpha *= 1 - ease((t - CUT_AT) / 0.5);
     g.fillStyle = '#fff1c2';
     g.font = '900 26px sans-serif';
     g.textAlign = 'center';
