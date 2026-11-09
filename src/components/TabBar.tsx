@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState, type CSSProperties, type MouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import { NAVIGATE_EVENT } from '@/lib/celebrate';
 import { createClient } from '@/lib/supabase/client';
 import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
@@ -45,6 +45,7 @@ export function TabBar({ isAdmin }: { isAdmin: boolean }) {
   // On bouge le carré tout de suite, sans attendre que la page soit chargée.
   const [target, setTarget] = useState(current);
   const [moving, setMoving] = useState(false);
+  const navTimer = useRef<number | null>(null);
   useEffect(() => setTarget(current), [current]);
 
   function go(e: MouseEvent<HTMLAnchorElement>, index: number, href: string) {
@@ -59,13 +60,14 @@ export function TabBar({ isAdmin }: { isAdmin: boolean }) {
     setTarget(index);
     setMoving(true);
     window.setTimeout(() => setMoving(false), 320);
-    window.setTimeout(() => delete root.dataset.dir, 1100);
     try {
       navigator.vibrate?.(8);
     } catch {
       /* pas de vibration */
     }
-    router.push(href);
+    // L'ancienne page a le temps de partir avant que la nouvelle n'arrive (la route est déjà préchargée).
+    if (navTimer.current) window.clearTimeout(navTimer.current);
+    navTimer.current = window.setTimeout(() => router.push(href), 130);
   }
 
   return (
@@ -82,6 +84,7 @@ export function TabBar({ isAdmin }: { isAdmin: boolean }) {
           <Link
             key={t.href}
             href={t.href}
+            prefetch
             className={`tab${on ? ' on' : ''}`}
             aria-current={i === current ? 'page' : undefined}
             onClick={(e) => go(e, i, t.href)}

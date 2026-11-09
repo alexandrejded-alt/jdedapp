@@ -31,12 +31,32 @@ export const RIM = 'M186 100 L200 92 L214 96 L228 93';
  */
 export type FlowDef = { d: string; w: number; delay: number; D: number; hold: number; D2: number; start: number };
 export const FLOWS: FlowDef[] = [
-  { d: 'M205 97 C199 122 212 144 203 172 C197 192 205 212 200 238', w: 3.2, delay: 0, D: 34, hold: 12, D2: 26, start: 3 },
-  { d: 'M219 97 C228 118 220 138 232 160 C240 176 236 200 244 232', w: 2.8, delay: 3, D: 40, hold: 10, D2: 28, start: 0 },
-  { d: 'M197 98 C188 114 176 130 170 152 C165 170 168 190 158 214', w: 2.5, delay: 8, D: 38, hold: 14, D2: 24, start: 0 },
-  { d: 'M209 150 C216 164 222 176 218 196 C216 210 224 222 222 240', w: 1.7, delay: 11, D: 30, hold: 12, D2: 22, start: 0 },
-  { d: 'M226 100 C238 112 246 124 256 136 C266 148 262 166 272 186', w: 2.1, delay: 6, D: 36, hold: 16, D2: 26, start: 0 },
+  // Coulées qui nourrissent les lettres JDED
+  { d: 'M207 96 C208 118 205 140 207 168', w: 2.8, delay: 0, D: 26, hold: 30, D2: 30, start: 2 },
+  { d: 'M203 97 C196 116 188 130 180 148 C176 158 175 164 175 169', w: 2.4, delay: 2, D: 28, hold: 28, D2: 30, start: 0 },
+  { d: 'M212 97 C222 116 228 132 234 148 C238 158 240 164 241 169', w: 2.4, delay: 3, D: 28, hold: 28, D2: 30, start: 0 },
+  // Grandes coulées sur les flancs
+  { d: 'M198 98 C186 112 168 124 152 142 C140 156 130 176 124 202', w: 2.5, delay: 6, D: 40, hold: 20, D2: 28, start: 0 },
+  { d: 'M224 98 C238 112 250 126 258 142 C268 160 276 178 282 202', w: 2.3, delay: 9, D: 40, hold: 20, D2: 28, start: 0 },
+  { d: 'M262 150 C272 162 286 170 292 186', w: 1.5, delay: 18, D: 22, hold: 18, D2: 20, start: 0 },
+  // Les lettres fondent : des gouttes de lave coulent dessous
+  { d: 'M172 192 C172 202 175 208 173 224', w: 1.5, delay: 9, D: 22, hold: 20, D2: 20, start: 0 },
+  { d: 'M195 192 C194 203 197 212 195 234', w: 1.7, delay: 11, D: 24, hold: 20, D2: 20, start: 0 },
+  { d: 'M219 192 C220 202 217 210 219 228', w: 1.5, delay: 13, D: 22, hold: 20, D2: 20, start: 0 },
+  { d: 'M241 192 C241 204 244 212 242 238', w: 1.7, delay: 15, D: 24, hold: 20, D2: 20, start: 0 },
 ];
+
+/**
+ * « JDED » écrit en lave sur la pente. Chaque lettre est un seul trait continu (dessiné comme avec un stylo
+ * de lave) dans une boîte de 19 de haut ; x = position de la lettre, y0 = haut de la ligne.
+ */
+export const LETTERS: { d: string; x: number }[] = [
+  { d: 'M3.2 17 C3.6 20.6 6.4 21.8 8.8 21.8 C11.4 21.8 12.4 19.6 12.4 16.6 L12.4 2.5', x: 163.75 },
+  { d: 'M2.5 2.5 L2.5 21.5 L8 21.5 C14.5 21.5 15.5 17 15.5 12 C15.5 7 14.5 2.5 8 2.5 L2.5 2.5', x: 186.25 },
+  { d: 'M14 2.5 L2.5 2.5 L2.5 12 L11 12 L2.5 12 L2.5 21.5 L14 21.5', x: 210.75 },
+  { d: 'M2.5 2.5 L2.5 21.5 L8 21.5 C14.5 21.5 15.5 17 15.5 12 C15.5 7 14.5 2.5 8 2.5 L2.5 2.5', x: 232.75 },
+];
+export const LETTERS_Y0 = 170;
 
 /** Ravines et arêtes dessinées sur le cône (relief). */
 export const RIDGES: { d: string; dark: boolean }[] = [

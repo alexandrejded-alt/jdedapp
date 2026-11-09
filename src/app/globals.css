@@ -347,7 +347,7 @@ html[data-dir="-1"] .view-enter :is(.view-head, .mine, .card, .ev, .row, .list, 
 @keyframes rise-r { from { opacity: 0; transform: translateX(64px); } to { opacity: 1; transform: none; } }
 @keyframes rise-l { from { opacity: 0; transform: translateX(-64px); } to { opacity: 1; transform: none; } }
 /* L'ancienne page s'efface dans le sens inverse pendant que la nouvelle se charge. */
-#page > .view-enter[data-leaving] { animation: leave-left 0.26s cubic-bezier(0.5, 0, 1, 1) both !important; }
+#page > .view-enter[data-leaving] { animation: leave-left 0.16s cubic-bezier(0.5, 0, 1, 1) both !important; }
 html[data-dir="-1"] #page > .view-enter[data-leaving] { animation-name: leave-right !important; }
 @keyframes leave-left { to { opacity: 0; transform: translateX(-70px) scale(0.985); } }
 @keyframes leave-right { to { opacity: 0; transform: translateX(70px) scale(0.985); } }

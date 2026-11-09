@@ -2,6 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Les pages des onglets sont gardées 30 s en mémoire : le changement d'onglet est instantané.
+  experimental: { staleTimes: { dynamic: 30, static: 180 } },
   async headers() {
     return [
       {
