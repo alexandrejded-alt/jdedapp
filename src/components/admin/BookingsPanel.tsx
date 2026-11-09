@@ -8,7 +8,9 @@ import { fullName, type PersonName } from '@/lib/types';
 import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { ConfirmButton } from '../ui/ConfirmButton';
 import { Icon } from '../ui/Icons';
+import { PersonAvatar } from '../ui/PersonAvatar';
 import { useToast } from '../ui/Toast';
+import { useAvatarUrls } from '@/lib/useAvatarUrls';
 
 type BookingRow = { id: string; start_at: string; who: PersonName };
 type EventSeats = {
@@ -35,11 +37,11 @@ export function BookingsPanel() {
     const [b, e] = await Promise.all([
       supabase
         .from('bookings')
-        .select('id, slots!inner(start_at), profiles(first_name, last_name, email)')
+        .select('id, slots!inner(start_at), profiles(first_name, last_name, email, avatar_path)')
         .gt('slots.start_at', nowIso),
       supabase
         .from('events')
-        .select('id, title, date, start_time, capacity, event_seats(id, profiles(first_name, last_name, email))')
+        .select('id, title, date, start_time, capacity, event_seats(id, profiles(first_name, last_name, email, avatar_path))')
         .gte('date', todayParis())
         .order('date')
         .order('start_time'),
@@ -85,6 +87,13 @@ export function BookingsPanel() {
     await load();
   }
 
+  const avatarPaths = useMemo(
+    () => [...bookings.map((b) => b.who?.avatar_path), ...events.flatMap((ev) => ev.seats.map((s) => s.who?.avatar_path))],
+    [bookings, events],
+  );
+  const avatars = useAvatarUrls(avatarPaths);
+  const face = (who: PersonName) => <PersonAvatar name={fullName(who)} url={who?.avatar_path ? avatars[who.avatar_path] : null} />;
+
   const byDay = new Map<string, BookingRow[]>();
   for (const b of bookings) {
     const d = dateParis(b.start_at);
@@ -116,9 +125,12 @@ export function BookingsPanel() {
             {list.map((b) => (
               <div className="slot-row" key={b.id}>
                 <span className="t">{timeParis(b.start_at)}</span>
-                <span className="s busy">
-                  {fullName(b.who)}
-                  {b.who?.email && <span className="row-sub"> {b.who.email}</span>}
+                <span className="s busy who">
+                  {face(b.who)}
+                  <span className="who-text">
+                    {fullName(b.who)}
+                    {b.who?.email && <span className="row-sub">{b.who.email}</span>}
+                  </span>
                 </span>
                 <ConfirmButton label="Annuler la coupe" armedLabel="Confirmer" onConfirm={() => removeBooking(b.id)} />
               </div>
@@ -156,6 +168,7 @@ export function BookingsPanel() {
                 <div className="attendees">
                   {ev.seats.map((s) => (
                     <span className="pill" key={s.id}>
+                      {face(s.who)}
                       {fullName(s.who)}
                       <ConfirmButton
                         label={<Icon name="x" />}

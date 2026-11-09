@@ -7,6 +7,7 @@ import { dateParis, dayLong, dayParts, timeParis } from '@/lib/time';
 import type { Slot } from '@/lib/types';
 import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { FlameIcon } from './ui/Icons';
+import { useSlideDir } from '@/lib/useSlideDir';
 import { ConfirmButton } from './ui/ConfirmButton';
 import { ConfirmSheet } from './ui/Sheets';
 import { useEmbers } from './ui/Embers';
@@ -60,12 +61,13 @@ export function CutView({ userId }: { userId: string }) {
   }, [free]);
   const days = useMemo(() => [...byDay.keys()].sort(), [byDay]);
   const activeDay = day && byDay.has(day) ? day : (days[0] ?? null);
+  const dayDir = useSlideDir(activeDay ? days.indexOf(activeDay) : 0);
 
   async function book(slot: Slot) {
     const { error } = await supabase.rpc('book_slot', { p_slot_id: slot.id });
     if (error) toast(friendlyError(error), true);
     else {
-      burst();
+      burst(undefined, 'Bravo pour ta réservation');
       toast('C\'est réservé !');
     }
     await load();
@@ -137,14 +139,16 @@ export function CutView({ userId }: { userId: string }) {
                 );
               })}
             </div>
-            <div className="day-title">{dayLong(activeDay)}</div>
-            <div className="times">
-              {(byDay.get(activeDay) ?? []).map((s) => (
-                <button key={s.id} type="button" className="time free" onClick={() => setPicked(s)}>
-                  {timeParis(s.start_at)}
-                  <small>Libre</small>
-                </button>
-              ))}
+            <div key={activeDay} className={dayDir ? `pane-${dayDir}` : undefined}>
+              <div className="day-title">{dayLong(activeDay)}</div>
+              <div className="times">
+                {(byDay.get(activeDay) ?? []).map((s) => (
+                  <button key={s.id} type="button" className="time free" onClick={() => setPicked(s)}>
+                    {timeParis(s.start_at)}
+                    <small>Libre</small>
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         )}

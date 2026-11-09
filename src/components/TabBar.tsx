@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type CSSProperties, type MouseEvent } from 'react';
+import { NAVIGATE_EVENT } from '@/lib/celebrate';
 import { createClient } from '@/lib/supabase/client';
 import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { Icon, type IconName } from './ui/Icons';
@@ -54,6 +55,7 @@ export function TabBar({ isAdmin }: { isAdmin: boolean }) {
     const root = document.documentElement;
     root.dataset.dir = String(dir);
     document.querySelector('#page > .view-enter')?.setAttribute('data-leaving', '1');
+    window.dispatchEvent(new Event(NAVIGATE_EVENT));
     setTarget(index);
     setMoving(true);
     window.setTimeout(() => setMoving(false), 320);

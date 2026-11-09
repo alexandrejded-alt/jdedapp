@@ -16,9 +16,11 @@ import {
   weekStart,
 } from '@/lib/time';
 import { fullName, type PersonName, type Slot } from '@/lib/types';
+import { useAvatarUrls } from '@/lib/useAvatarUrls';
 import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { ConfirmButton } from '../ui/ConfirmButton';
 import { Icon } from '../ui/Icons';
+import { PersonAvatar } from '../ui/PersonAvatar';
 import { TimeField } from '../ui/pickers';
 import { useEmbers } from '../ui/Embers';
 import { useToast } from '../ui/Toast';
@@ -53,7 +55,7 @@ export function SlotsPanel() {
   const load = useCallback(async () => {
     const [s, b] = await Promise.all([
       supabase.from('slots').select('id, start_at, end_at, is_booked').gt('start_at', new Date().toISOString()).order('start_at'),
-      supabase.from('bookings').select('id, slot_id, profiles(first_name, last_name)'),
+      supabase.from('bookings').select('id, slot_id, profiles(first_name, last_name, avatar_path)'),
     ]);
     if (s.error || b.error) {
       toast(friendlyError(s.error ?? b.error), true);
@@ -70,6 +72,9 @@ export function SlotsPanel() {
   }, [supabase, toast]);
 
   useRealtimeRefresh(['slots', 'bookings'], load);
+
+  const avatarPaths = useMemo(() => Object.values(who).map((w) => w.who?.avatar_path), [who]);
+  const avatars = useAvatarUrls(avatarPaths);
 
   const existing = useMemo(() => new Set(slots.map((s) => new Date(s.start_at).getTime())), [slots]);
 
@@ -328,7 +333,16 @@ export function SlotsPanel() {
             return (
               <div className="slot-row" key={s.id}>
                 <span className="t">{timeParis(s.start_at)}</span>
-                <span className={`s ${booking ? 'busy' : 'free'}`}>{booking ? name : 'Libre'}</span>
+                <span className={`s ${booking ? 'busy who' : 'free'}`}>
+                  {booking ? (
+                    <>
+                      <PersonAvatar name={name} url={booking.who?.avatar_path ? avatars[booking.who.avatar_path] : null} />
+                      <span className="who-text">{name}</span>
+                    </>
+                  ) : (
+                    'Libre'
+                  )}
+                </span>
                 {booking && (
                   <ConfirmButton
                     label="Libérer"

@@ -24,12 +24,33 @@ export const MAIN: Pt[] = [
 /** Bord du cratère (ligne qui s'illumine). */
 export const RIM = 'M186 100 L200 92 L214 96 L228 93';
 
-/** Coulées de lave sur les pentes. */
-export const VEINS = [
-  'M207 97 C201 128 214 150 206 186 L204 232',
-  'M222 98 C230 122 222 142 234 170 L240 226',
-  'M198 97 C190 118 176 132 168 160 L158 206',
+/**
+ * Coulées de lave : chacune part du cratère et descend lentement la pente.
+ * w = épaisseur à la source (elle s'amincit en descendant), delay/D/hold/D2 = rythme en secondes
+ * (attente, avancée du front, pause, refroidissement). Les durées sont longues : la lave coule doucement.
+ */
+export type FlowDef = { d: string; w: number; delay: number; D: number; hold: number; D2: number; start: number };
+export const FLOWS: FlowDef[] = [
+  { d: 'M205 97 C199 122 212 144 203 172 C197 192 205 212 200 238', w: 3.2, delay: 0, D: 34, hold: 12, D2: 26, start: 3 },
+  { d: 'M219 97 C228 118 220 138 232 160 C240 176 236 200 244 232', w: 2.8, delay: 3, D: 40, hold: 10, D2: 28, start: 0 },
+  { d: 'M197 98 C188 114 176 130 170 152 C165 170 168 190 158 214', w: 2.5, delay: 8, D: 38, hold: 14, D2: 24, start: 0 },
+  { d: 'M209 150 C216 164 222 176 218 196 C216 210 224 222 222 240', w: 1.7, delay: 11, D: 30, hold: 12, D2: 22, start: 0 },
+  { d: 'M226 100 C238 112 246 124 256 136 C266 148 262 166 272 186', w: 2.1, delay: 6, D: 36, hold: 16, D2: 26, start: 0 },
 ];
+
+/** Ravines et arêtes dessinées sur le cône (relief). */
+export const RIDGES: { d: string; dark: boolean }[] = [
+  { d: 'M200 92 C190 120 170 150 138 204', dark: true },
+  { d: 'M203 94 C198 126 186 160 172 214', dark: false },
+  { d: 'M208 96 C209 130 202 164 196 220', dark: true },
+  { d: 'M214 96 C224 122 244 150 266 190', dark: true },
+  { d: 'M220 95 C236 118 256 140 292 176', dark: false },
+  { d: 'M186 102 C170 126 150 156 124 196', dark: false },
+  { d: 'M228 94 C238 110 252 128 268 146', dark: true },
+];
+
+/** Le lac de lave dans la gorge du sommet. */
+export const POOL = { cx: 207, cy: 94.5, rx: 9.5, ry: 2.2 };
 
 export type Frame = { u: number; ox: number; oy: number; x: (vx: number) => number; y: (vy: number) => number };
 

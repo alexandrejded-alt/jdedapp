@@ -50,7 +50,7 @@ export function ShowtimeView({ userId }: { userId: string }) {
     const { error } = await supabase.rpc('reserve_event_seat', { p_event_id: ev.id });
     if (error) toast(friendlyError(error), true);
     else {
-      burst();
+      burst(undefined, 'Bravo pour ta réservation');
       toast('Ta place est réservée.');
     }
     await load();

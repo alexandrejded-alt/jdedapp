@@ -3,9 +3,10 @@
 import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { CELEBRATE_EVENT, celebrate, type CelebrateDetail } from '@/lib/celebrate';
 import { craterPoint } from '@/lib/volcano';
+import { PlaneBanner } from './PlaneBanner';
 
 type Origin = { x: number; y: number };
-const EmberContext = createContext<(origin?: Origin) => void>(() => {});
+const EmberContext = createContext<(origin?: Origin, banner?: string) => void>(() => {});
 
 /**
  * Célébration : quand quelque chose est validé (coupe, place, compte...),
@@ -23,14 +24,16 @@ export function EmberProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('pointerdown', onDown, true);
   }, []);
 
-  const burst = useCallback((origin?: Origin) => {
-    celebrate(origin ?? last.current ?? { x: window.innerWidth / 2, y: window.innerHeight * 0.45 });
+  const burst = useCallback((origin?: Origin, banner?: string) => {
+    const at = origin ?? last.current ?? { x: window.innerWidth / 2, y: window.innerHeight * 0.45 };
+    celebrate(banner ? { ...at, banner } : at);
   }, []);
 
   return (
     <EmberContext.Provider value={burst}>
       {children}
       <FireworksLayer />
+      <PlaneBanner />
     </EmberContext.Provider>
   );
 }

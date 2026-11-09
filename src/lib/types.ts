@@ -31,7 +31,7 @@ export type EventRow = {
   seats_taken: number;
 };
 
-export type PersonName = { first_name: string; last_name: string; email?: string } | null;
+export type PersonName = { first_name: string; last_name: string; email?: string; avatar_path?: string | null } | null;
 
 export const fullName = (p: PersonName | undefined): string =>
   p ? `${p.first_name} ${p.last_name}`.trim() || 'Client' : 'Client';
