@@ -8,6 +8,7 @@ export type Profile = {
   email: string;
   status: AccountStatus;
   role: AccountRole;
+  avatar_path: string | null;
   created_at: string;
 };
 

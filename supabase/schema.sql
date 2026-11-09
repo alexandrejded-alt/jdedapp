@@ -381,6 +381,66 @@ create policy event_seats_admin_write on public.event_seats
 
 
 -- ---------------------------------------------------------------------
+-- 6 bis. PHOTO DE PROFIL
+--    Chaque compte validé peut choisir sa photo. Elle est rangée dans un
+--    espace privé ("avatars", un dossier par personne). Personne d'autre que
+--    la personne et JDED ne peut la lire. Un compte ne peut pas modifier
+--    sa fiche à la main : il passe par set_my_avatar, qui ne touche qu'à la photo.
+-- ---------------------------------------------------------------------
+
+alter table public.profiles add column if not exists avatar_path text;
+
+create or replace function public.set_my_avatar(p_path text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_approved() then
+    raise exception 'not_allowed';
+  end if;
+  -- Le fichier doit être dans le dossier de la personne : <son id>/<nom>.jpg
+  if p_path is not null and p_path !~ ('^' || auth.uid()::text || '/[A-Za-z0-9._-]{1,80}$') then
+    raise exception 'bad_path';
+  end if;
+  update public.profiles set avatar_path = p_path where id = auth.uid();
+end;
+$$;
+
+revoke all on function public.set_my_avatar(text) from public, anon;
+grant execute on function public.set_my_avatar(text) to authenticated;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', false, 1048576, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update
+  set public = false,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists avatars_select on storage.objects;
+create policy avatars_select on storage.objects
+  for select to authenticated
+  using (bucket_id = 'avatars' and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin()));
+
+drop policy if exists avatars_insert on storage.objects;
+create policy avatars_insert on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text and public.is_approved());
+
+drop policy if exists avatars_update on storage.objects;
+create policy avatars_update on storage.objects
+  for update to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text and public.is_approved())
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text and public.is_approved());
+
+drop policy if exists avatars_delete on storage.objects;
+create policy avatars_delete on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'avatars' and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin()));
+
+
+-- ---------------------------------------------------------------------
 -- 7. TEMPS RÉEL : les écrans se mettent à jour tout seuls
 -- ---------------------------------------------------------------------
 

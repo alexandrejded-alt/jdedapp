@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { EMAIL_RE, authError, passwordProblem } from '@/lib/errors';
 import { FlameIcon } from './ui/Icons';
+import { armEmbers } from './ui/EmberOnMount';
 
 type Mode = 'home' | 'signup' | 'login' | 'forgot';
 
@@ -60,6 +61,7 @@ export function AuthScreen({ initialError }: { initialError?: string }) {
         return setError('Cette adresse a déjà un compte. Passe sur « Se connecter ».');
       }
       if (data.session) {
+        armEmbers('jded_ember_signup');
         window.location.href = '/'; // le serveur t'envoie sur « Demande envoyée »
         return;
       }

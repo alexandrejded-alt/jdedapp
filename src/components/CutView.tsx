@@ -9,6 +9,7 @@ import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { FlameIcon } from './ui/Icons';
 import { ConfirmButton } from './ui/ConfirmButton';
 import { ConfirmSheet } from './ui/Sheets';
+import { useEmbers } from './ui/Embers';
 import { useToast } from './ui/Toast';
 
 type MyBooking = { id: string; start_at: string };
@@ -17,6 +18,7 @@ type MyBooking = { id: string; start_at: string };
 export function CutView({ userId }: { userId: string }) {
   const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
+  const burst = useEmbers();
   const [slots, setSlots] = useState<Slot[]>([]);
   const [mine, setMine] = useState<MyBooking | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -62,7 +64,10 @@ export function CutView({ userId }: { userId: string }) {
   async function book(slot: Slot) {
     const { error } = await supabase.rpc('book_slot', { p_slot_id: slot.id });
     if (error) toast(friendlyError(error), true);
-    else toast('C\'est réservé !');
+    else {
+      burst();
+      toast('C\'est réservé !');
+    }
     await load();
   }
 

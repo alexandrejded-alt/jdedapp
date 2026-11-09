@@ -156,6 +156,8 @@ Trois barrières, jamais une seule :
 2. **Le serveur (middleware)** : à chaque page, il vérifie la session et le statut. Visiteur : renvoyé vers la connexion. En attente : écran d'attente. Refusé : écran "Accès non accordé". Client normal qui tape `/admin` : renvoyé vers Cut.
 3. **L'interface** : l'onglet Admin n'apparaît que pour toi (mais ce n'est jamais la seule protection).
 
+Les photos de profil sont rangées dans un espace privé de Supabase (`avatars`, un dossier par personne). Seule la personne et JDED peuvent les voir. Cet espace et ses règles sont créés par `schema.sql` : si tu as installé une version plus ancienne du site, relance simplement `schema.sql` en entier (c'est sans risque) pour les ajouter.
+
 Les réservations passent par des fonctions de la base qui verrouillent la ligne avant d'écrire : deux personnes ne peuvent pas prendre le même créneau, et un évènement ne dépasse jamais son nombre de places, même si deux clics arrivent en même temps.
 
 ---
@@ -185,7 +187,7 @@ src/lib/time.ts           dates et heures en heure de Paris
 src/app/                  les pages (login, attente, refuse, cut, showtime, admin)
 src/components/           les écrans et les petits composants
 src/app/globals.css       tout le design (couleurs, polices, flammes)
-public/                   avatar, bannière, icônes
+public/                   photo JDED, icônes
 ```
 
 Couleurs : `--bg #0a0705`, `--surface #15100b`, `--line #35230f`, `--ink #f8ecdd`, `--ink-dim #b39d84`, `--flame #ff6a13`, `--flame-hot #ff9a2e`, `--gold #f4bd4f`, `--ok #86d993`, `--bad #ff7466`. Polices : Rozha One, Barlow, Barlow Condensed (chargées depuis Google Fonts).

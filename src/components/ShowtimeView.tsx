@@ -9,6 +9,7 @@ import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { FlameIcon, Icon } from './ui/Icons';
 import { ConfirmButton } from './ui/ConfirmButton';
 import { ConfirmSheet } from './ui/Sheets';
+import { useEmbers } from './ui/Embers';
 import { useToast } from './ui/Toast';
 
 type MySeat = { id: string; event_id: string };
@@ -17,6 +18,7 @@ type MySeat = { id: string; event_id: string };
 export function ShowtimeView({ userId }: { userId: string }) {
   const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
+  const burst = useEmbers();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [seats, setSeats] = useState<MySeat[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -47,7 +49,10 @@ export function ShowtimeView({ userId }: { userId: string }) {
   async function reserve(ev: EventRow) {
     const { error } = await supabase.rpc('reserve_event_seat', { p_event_id: ev.id });
     if (error) toast(friendlyError(error), true);
-    else toast('Ta place est réservée.');
+    else {
+      burst();
+      toast('Ta place est réservée.');
+    }
     await load();
   }
 

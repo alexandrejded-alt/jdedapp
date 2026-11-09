@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { FlameIcon } from './ui/Icons';
+import { EmberOnMount, armEmbers } from './ui/EmberOnMount';
 import { LogoutButton } from './LogoutButton';
 
 /**
@@ -13,13 +14,17 @@ import { LogoutButton } from './LogoutButton';
 export function WaitScreen({ userId, name, email }: { userId: string; name: string; email: string }) {
   const check = useCallback(async () => {
     const { data } = await createClient().from('profiles').select('status').eq('id', userId).maybeSingle();
-    if (data && data.status !== 'pending') window.location.href = '/';
+    if (data && data.status !== 'pending') {
+      if (data.status === 'approved') armEmbers('jded_ember_welcome');
+      window.location.href = '/';
+    }
   }, [userId]);
 
   useRealtimeRefresh(['profiles'], check);
 
   return (
     <section className="gate pad">
+      <EmberOnMount flag="jded_ember_signup" />
       <div className="gate-card">
         <FlameIcon />
         <div className="eyebrow">Demande envoyée</div>
