@@ -40,7 +40,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         }}
       />
       <EmberOnMount flag="jded_ember_welcome" message="Bienvenue dans la jded family." />
-      <main className="pad">{children}</main>
+      <main id="page" className="pad">{children}</main>
       <TabBar isAdmin={isAdmin} />
     </div>
   );

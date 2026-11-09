@@ -20,6 +20,7 @@ import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { ConfirmButton } from '../ui/ConfirmButton';
 import { Icon } from '../ui/Icons';
 import { TimeField } from '../ui/pickers';
+import { useEmbers } from '../ui/Embers';
 import { useToast } from '../ui/Toast';
 
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
@@ -35,6 +36,7 @@ type Generated = { date: string; start_at: string; end_at: string; time: string 
 export function SlotsPanel() {
   const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
+  const burst = useEmbers();
   const today = todayParis();
 
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -116,6 +118,7 @@ export function SlotsPanel() {
     const n = await insert(fresh.map((g) => ({ start_at: g.start_at, end_at: g.end_at })));
     setBusy(false);
     if (n !== null) {
+      if (n > 0) burst();
       toast(`${n} créneau${n > 1 ? 'x' : ''} ajouté${n > 1 ? 's' : ''}.`);
       setSelected([]);
       await load();

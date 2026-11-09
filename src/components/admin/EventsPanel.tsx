@@ -8,6 +8,7 @@ import type { EventRow } from '@/lib/types';
 import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { ConfirmButton } from '../ui/ConfirmButton';
 import { DateField, TimeField } from '../ui/pickers';
+import { useEmbers } from '../ui/Embers';
 import { useToast } from '../ui/Toast';
 
 const SELECT = 'id, title, date, start_time, end_time, place, capacity, rules, seats_taken';
@@ -16,6 +17,7 @@ const SELECT = 'id, title, date, start_time, end_time, place, capacity, rules, s
 export function EventsPanel() {
   const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
+  const burst = useEmbers();
   const today = todayParis();
 
   const [events, setEvents] = useState<EventRow[]>([]);
@@ -90,6 +92,7 @@ export function EventsPanel() {
       : await supabase.from('events').insert(payload);
     setBusy(false);
     if (error) return toast(friendlyError(error), true);
+    if (!editId) burst();
     toast(editId ? 'Évènement mis à jour.' : 'Évènement publié.');
     reset();
     await load();

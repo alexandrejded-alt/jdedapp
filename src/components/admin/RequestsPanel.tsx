@@ -7,6 +7,7 @@ import { shortDate } from '@/lib/time';
 import type { AccountStatus, Profile } from '@/lib/types';
 import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { ConfirmButton } from '../ui/ConfirmButton';
+import { useEmbers } from '../ui/Embers';
 import { useToast } from '../ui/Toast';
 
 const SELECT = 'id, first_name, last_name, email, status, role, created_at';
@@ -16,6 +17,7 @@ const nameOf = (p: Pick<Profile, 'first_name' | 'last_name'>) => `${p.first_name
 export function RequestsPanel() {
   const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
+  const burst = useEmbers();
   const [rows, setRows] = useState<Profile[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [notify, setNotify] = useState<Profile | null>(null);
@@ -40,7 +42,10 @@ export function RequestsPanel() {
       return;
     }
     toast(done);
-    if (status === 'approved') setNotify(p);
+    if (status === 'approved') {
+      burst();
+      setNotify(p);
+    }
     await load();
   }
 
