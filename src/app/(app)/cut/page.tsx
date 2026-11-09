@@ -6,5 +6,8 @@ export default async function CutPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return <CutView userId={user?.id ?? ''} />;
+  const { data: profile } = user
+    ? await supabase.from('profiles').select('first_name, avatar_path').eq('id', user.id).single()
+    : { data: null };
+  return <CutView userId={user?.id ?? ''} guestName={profile?.first_name || 'TOI'} avatarPath={profile?.avatar_path ?? null} />;
 }

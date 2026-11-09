@@ -5,6 +5,7 @@ import { friendlyError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/client';
 import { dateParis, dayLong, dayParts, timeParis } from '@/lib/time';
 import type { Slot } from '@/lib/types';
+import { useAvatarUrls } from '@/lib/useAvatarUrls';
 import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { FlameIcon } from './ui/Icons';
 import { useSlideDir } from '@/lib/useSlideDir';
@@ -16,9 +17,11 @@ import { useToast } from './ui/Toast';
 type MyBooking = { id: string; start_at: string };
 
 /** Onglet Cut : le client choisit un jour, puis une heure, et confirme. */
-export function CutView({ userId }: { userId: string }) {
+export function CutView({ userId, guestName, avatarPath }: { userId: string; guestName: string; avatarPath: string | null }) {
   const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
+  const avatarPaths = useMemo(() => [avatarPath], [avatarPath]);
+  const avatarUrls = useAvatarUrls(avatarPaths);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [mine, setMine] = useState<MyBooking | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -66,7 +69,9 @@ export function CutView({ userId }: { userId: string }) {
     const { error } = await supabase.rpc('book_slot', { p_slot_id: slot.id });
     if (error) toast(friendlyError(error), true);
     else {
-      window.dispatchEvent(new Event(VOLCANO_JOURNEY_EVENT));
+      window.dispatchEvent(new CustomEvent(VOLCANO_JOURNEY_EVENT, {
+        detail: { name: guestName, avatarUrl: avatarPath ? avatarUrls[avatarPath] : null },
+      }));
       toast('C\'est réservé !');
     }
     await load();
