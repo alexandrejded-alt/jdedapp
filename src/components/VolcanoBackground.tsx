@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { CELEBRATE_EVENT, NAVIGATE_EVENT, prefersReducedMotion } from '@/lib/celebrate';
-import { BACK, FLOWS, LETTERS, LETTERS_Y0, MAIN, POOL, RIDGES, craterPoint, volcanoFrame, type Pt } from '@/lib/volcano';
+import { BACK, FLOWS, MAIN, POOL, RIDGES, craterPoint, volcanoFrame, type Pt } from '@/lib/volcano';
 
 type Ember = { x: number; y: number; vx: number; vy: number; age: number; max: number; size: number; ph: number; hot: number };
 type Smoke = { x: number; y: number; vx: number; vy: number; age: number; max: number; r0: number; r1: number };
@@ -14,6 +14,9 @@ type Flow = {
   w: number;
   delay: number;
   D: number;
+  dim: number;
+  clean: boolean;
+  lin: boolean;
   hold: number;
   D2: number;
   phase: number;
@@ -23,7 +26,6 @@ type Flow = {
   edgeR: number[];
   cracks: Crack[];
 };
-type Letter = { d: string; x: number; path: Path2D; len: number; svg: SVGPathElement };
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 /** L'écran d'accueil cache les ~3,4 premières secondes : l'animation du volcan démarre juste après. */
@@ -118,13 +120,14 @@ export function VolcanoBackground() {
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', def.d);
       const total = path.getTotalLength();
-      const N = 44;
+      const N = clamp(Math.round(total / 1.1), 44, 170);
       const pts: Pt[] = [];
       for (let k = 0; k <= N; k++) {
         const q = path.getPointAtLength((total * k) / N);
         pts.push([q.x, q.y]);
       }
-      const cycle = def.delay + def.D + def.hold + def.D2;
+      const D = def.speed ? total / def.speed : def.D;
+      const cycle = def.delay + D + def.hold + def.D2;
       // Bords irréguliers (lobes) et fissures lumineuses, tirés une fois pour toutes
       let sd = 97 + i * 31;
       const rnd = () => {
@@ -136,13 +139,13 @@ export function VolcanoBackground() {
       let aL = 0;
       let aR = 0;
       for (let k = 0; k <= N; k++) {
-        aL = aL * 0.55 + (rnd() - 0.5) * 0.7;
-        aR = aR * 0.55 + (rnd() - 0.5) * 0.7;
+        aL = aL * 0.55 + (rnd() - 0.5) * 0.7 * (def.clean ? 0.22 : 1);
+        aR = aR * 0.55 + (rnd() - 0.5) * 0.7 * (def.clean ? 0.22 : 1);
         edgeL.push(aL);
         edgeR.push(aR);
       }
       const cracks: Crack[] = [];
-      const nCracks = 16 + Math.round(def.w * 4);
+      const nCracks = def.clean ? 2 : 6 + Math.round(def.w * 3);
       for (let k = 0; k < nCracks; k++) {
         cracks.push({ s: rnd(), lat: (rnd() - 0.5) * 1.5, len: 0.02 + rnd() * 0.045, ang: (rnd() - 0.5) * 1.1, w: 0.4 + rnd() * 0.5, ph: rnd() * 6.28 });
       }
@@ -150,23 +153,19 @@ export function VolcanoBackground() {
         pts,
         w: def.w,
         delay: def.delay,
-        D: def.D,
+        D,
+        dim: def.dim ?? 1,
+        clean: !!def.clean,
+        lin: !!def.lin,
         hold: def.hold,
         D2: def.D2,
-        phase: reduce ? def.delay + def.D * 0.8 : def.start - SPLASH,
+        phase: reduce ? def.delay + D + 1 : def.start - SPLASH,
         seed: i * 2.3 + 0.7,
         cycle,
         edgeL,
         edgeR,
         cracks,
       };
-    });
-
-    // Les lettres JDED : mesurées une fois, puis « écrites » une à une au lancement
-    const letters: Letter[] = LETTERS.map((l) => {
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      svg.setAttribute('d', l.d);
-      return { ...l, path: new Path2D(l.d), len: svg.getTotalLength(), svg };
     });
 
     const poly = (g: CanvasRenderingContext2D, pts: Pt[], f: ReturnType<typeof volcanoFrame>) => {
@@ -288,8 +287,8 @@ export function VolcanoBackground() {
       g.restore();
 
       // Contour discret
-      g.strokeStyle = 'rgba(255, 140, 60, 0.22)';
-      g.lineWidth = 1.1;
+      g.strokeStyle = 'rgba(255, 140, 60, 0.06)';
+      g.lineWidth = 1;
       poly(g, MAIN.slice(4, MAIN.length - 2), f);
       g.stroke();
       sil = c;
@@ -370,7 +369,7 @@ export function VolcanoBackground() {
         fl.phase += dt * speed;
         if (fl.phase >= fl.cycle) fl.phase -= fl.cycle;
         const x = (fl.phase - fl.delay) / fl.D;
-        const head = x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.pow(1 - x, 1.7);
+        const head = x <= 0 ? 0 : x >= 1 ? 1 : fl.lin ? x : 1 - Math.pow(1 - x, 1.7);
         const yy = (fl.phase - fl.delay - fl.D - fl.hold) / fl.D2;
         const tail = yy <= 0 ? 0 : yy >= 1 ? 1 : smooth(yy);
         if (head < 0.01 || tail >= 0.995) continue;
@@ -379,6 +378,8 @@ export function VolcanoBackground() {
         if (seg.length < 3) continue;
         const N = fl.pts.length - 1;
         const wid = fl.w * 1.45 * (1 + 0.3 * boost);
+        const dim = fl.dim;
+        const clean = fl.clean;
         const heatAt = (s: number) => {
           const wave = 0.5 + 0.5 * Math.sin(s * 17 - t * 0.9 + fl.seed);
           const wave2 = 0.5 + 0.5 * Math.sin(s * 41 - t * 1.6 + fl.seed * 2);
@@ -423,7 +424,7 @@ export function VolcanoBackground() {
         ctx.beginPath();
         seg.forEach(({ p }, i) => (i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1])));
         ctx.lineWidth = wid * 3.4;
-        ctx.strokeStyle = `rgba(255, 90, 20, ${0.04 + 0.05 * boost + 0.03 * surge})`;
+        ctx.strokeStyle = `rgba(255, 90, 20, ${(0.04 + 0.05 * boost + 0.03 * surge) * dim})`;
         ctx.stroke();
 
         // Croûte sombre
@@ -435,7 +436,7 @@ export function VolcanoBackground() {
         // Bords incandescents (la lave qui déborde sous la croûte)
         ctx.globalCompositeOperation = 'lighter';
         ctx.lineWidth = 0.55;
-        ctx.strokeStyle = `rgba(255, 110, 28, ${0.32 + 0.25 * boost})`;
+        ctx.strokeStyle = `rgba(255, 110, 28, ${(0.32 + 0.25 * boost) * dim * (clean ? 0.25 : 1)})`;
         ctx.beginPath();
         L.forEach((q, i) => (i === 0 ? ctx.moveTo(q[0], q[1]) : ctx.lineTo(q[0], q[1])));
         ctx.moveTo(R[0][0], R[0][1]);
@@ -466,7 +467,7 @@ export function VolcanoBackground() {
           ctx.moveTo(cx - dx, cy - dy);
           ctx.lineTo(cx + dx, cy + dy);
           ctx.lineWidth = c.w;
-          ctx.strokeStyle = lava(Math.max(0.5, heat), (0.25 + 0.5 * flick) * cool);
+          ctx.strokeStyle = lava(Math.max(0.5, heat), (0.25 + 0.5 * flick) * cool * dim);
           ctx.stroke();
         }
 
@@ -474,8 +475,8 @@ export function VolcanoBackground() {
         ctx.globalCompositeOperation = 'source-over';
         ctx.beginPath();
         seg.forEach(({ p }, i) => (i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1])));
-        ctx.lineWidth = wid * 0.36;
-        ctx.strokeStyle = `rgba(${205 + 25 * boost | 0}, ${58 + 30 * boost | 0}, 12, ${tail > 0 ? 0.5 : 0.85})`;
+        ctx.lineWidth = wid * (clean ? 0.62 : 0.36);
+        ctx.strokeStyle = `rgba(${205 + 25 * boost | 0}, ${58 + 30 * boost | 0}, 12, ${(tail > 0 ? 0.5 : 0.85) * (0.55 + 0.45 * dim)})`;
         ctx.stroke();
         ctx.globalCompositeOperation = 'lighter';
         for (let i = 0; i < seg.length - 1; i++) {
@@ -486,8 +487,8 @@ export function VolcanoBackground() {
           ctx.beginPath();
           ctx.moveTo(a.p[0], a.p[1]);
           ctx.lineTo(b.p[0], b.p[1]);
-          ctx.lineWidth = wid * (0.3 - 0.12 * s) * (0.85 + 0.3 * Math.sin(s * 17 - t * 0.9 + fl.seed));
-          ctx.strokeStyle = lava(Math.max(0.5, heat), 0.34 * (0.3 + 0.7 * heat) * (0.2 + 0.8 * cool));
+          ctx.lineWidth = wid * (clean ? 0.5 - 0.1 * s : 0.3 - 0.12 * s) * (0.85 + 0.3 * Math.sin(s * 17 - t * 0.9 + fl.seed));
+          ctx.strokeStyle = lava(Math.max(0.5, heat), 0.34 * (0.3 + 0.7 * heat) * (0.2 + 0.8 * cool) * dim);
           ctx.stroke();
         }
 
@@ -496,75 +497,12 @@ export function VolcanoBackground() {
           const tip = seg[seg.length - 1].p;
           const R2 = wid * 1.7;
           const g = ctx.createRadialGradient(tip[0], tip[1], 0, tip[0], tip[1], R2);
-          g.addColorStop(0, 'rgba(255, 200, 110, 0.55)');
+          g.addColorStop(0, `rgba(255, 200, 110, ${0.55 * dim})`);
           g.addColorStop(1, 'rgba(255, 90, 20, 0)');
           ctx.fillStyle = g;
           ctx.fillRect(tip[0] - R2, tip[1] - R2, R2 * 2, R2 * 2);
         }
       }
-      ctx.restore();
-      ctx.globalCompositeOperation = 'source-over';
-    }
-
-    /** « JDED » écrit en lave, lettre après lettre au lancement, puis qui respire doucement. */
-    function drawLetters(t: number, boost: number, surge: number) {
-      if (!ctx) return;
-      const f = volcanoFrame(w, h);
-      ctx.save();
-      ctx.translate(f.ox, f.oy);
-      ctx.scale(f.u, f.u);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      letters.forEach((l, i) => {
-        const r = reduce ? 1 : smooth(clamp((t - (SPLASH + 0.2 + i * 1.0)) / 1.3));
-        if (r <= 0) return;
-        const done = r >= 1;
-        const pulse = 0.5 + 0.5 * Math.sin(t * 1.1 + i * 1.4);
-        const heat = clamp(0.62 + 0.2 * pulse + 0.25 * boost + 0.15 * surge, 0, 1.1);
-        ctx.save();
-        ctx.translate(l.x, LETTERS_Y0);
-        ctx.setLineDash(done ? [] : [l.len * r + 0.01, l.len * 3]);
-
-        // Croûte sombre sous la lettre
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.lineWidth = 6.2;
-        ctx.strokeStyle = 'rgba(10, 4, 2, 0.8)';
-        ctx.stroke(l.path);
-        // Lueur
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.lineWidth = 10.5;
-        ctx.strokeStyle = `rgba(255, 90, 20, ${0.05 + 0.05 * pulse + 0.1 * boost})`;
-        ctx.stroke(l.path);
-        // Corps de la lettre
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.lineWidth = 3.7;
-        ctx.strokeStyle = `rgba(${215 + 30 * heat | 0}, ${58 + 40 * heat | 0}, 12, 0.96)`;
-        ctx.stroke(l.path);
-        // Coeur chaud
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.lineWidth = 1.7;
-        ctx.strokeStyle = lava(0.5 + 0.35 * heat, 0.5);
-        ctx.stroke(l.path);
-        // Reflets qui avancent le long du trait, comme de la lave qui circule
-        if (done) {
-          ctx.setLineDash([6, 12]);
-          ctx.lineDashOffset = -(t * 6 + i * 5);
-          ctx.lineWidth = 1.5;
-          ctx.strokeStyle = lava(1.05, 0.5 + 0.2 * boost);
-          ctx.stroke(l.path);
-        } else {
-          // Pointe du stylo : un petit point brûlant à l'endroit où la lettre s'écrit
-          const q = l.svg.getPointAtLength(l.len * r);
-          const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, 7);
-          g.addColorStop(0, 'rgba(255, 235, 170, 0.95)');
-          g.addColorStop(0.35, 'rgba(255, 150, 50, 0.5)');
-          g.addColorStop(1, 'rgba(255, 90, 20, 0)');
-          ctx.setLineDash([]);
-          ctx.fillStyle = g;
-          ctx.fillRect(q.x - 7, q.y - 7, 14, 14);
-        }
-        ctx.restore();
-      });
       ctx.restore();
       ctx.globalCompositeOperation = 'source-over';
     }
@@ -679,28 +617,8 @@ export function VolcanoBackground() {
       ctx.fillRect(-105 * f.u, -105 * f.u, 210 * f.u, 210 * f.u);
       ctx.restore();
 
-      // Lumière sur les arêtes du sommet
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.translate(f.ox, f.oy);
-      ctx.scale(f.u, f.u);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      for (const edge of [[[132, 160], [146, 146], [186, 100], [200, 92]], [[214, 96], [228, 93], [256, 124], [290, 162]]] as Pt[][]) {
-        ctx.beginPath();
-        edge.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
-        ctx.lineWidth = 3.4;
-        ctx.strokeStyle = `rgba(255, 110, 30, ${0.08 + 0.1 * boost})`;
-        ctx.stroke();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = `rgba(255, 175, 95, ${0.38 + 0.12 * shimmer + 0.3 * boost})`;
-        ctx.stroke();
-      }
-      ctx.restore();
-
-      // Coulées de lave et lettres
+      // Coulées de lave (certaines dessinent JDED en descendant)
       drawFlows(dt, t, boost, surge);
-      drawLetters(t, boost, surge);
 
       // Lac de lave au sommet + lueur du cratère
       ctx.globalCompositeOperation = 'lighter';

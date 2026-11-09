@@ -29,34 +29,60 @@ export const RIM = 'M186 100 L200 92 L214 96 L228 93';
  * w = épaisseur à la source (elle s'amincit en descendant), delay/D/hold/D2 = rythme en secondes
  * (attente, avancée du front, pause, refroidissement). Les durées sont longues : la lave coule doucement.
  */
-export type FlowDef = { d: string; w: number; delay: number; D: number; hold: number; D2: number; start: number };
-export const FLOWS: FlowDef[] = [
-  // Coulées qui nourrissent les lettres JDED
-  { d: 'M207 96 C208 118 205 140 207 168', w: 2.8, delay: 0, D: 26, hold: 30, D2: 30, start: 2 },
-  { d: 'M203 97 C196 116 188 130 180 148 C176 158 175 164 175 169', w: 2.4, delay: 2, D: 28, hold: 28, D2: 30, start: 0 },
-  { d: 'M212 97 C222 116 228 132 234 148 C238 158 240 164 241 169', w: 2.4, delay: 3, D: 28, hold: 28, D2: 30, start: 0 },
-  // Grandes coulées sur les flancs
-  { d: 'M198 98 C186 112 168 124 152 142 C140 156 130 176 124 202', w: 2.5, delay: 6, D: 40, hold: 20, D2: 28, start: 0 },
-  { d: 'M224 98 C238 112 250 126 258 142 C268 160 276 178 282 202', w: 2.3, delay: 9, D: 40, hold: 20, D2: 28, start: 0 },
-  { d: 'M262 150 C272 162 286 170 292 186', w: 1.5, delay: 18, D: 22, hold: 18, D2: 20, start: 0 },
-  // Les lettres fondent : des gouttes de lave coulent dessous
-  { d: 'M172 192 C172 202 175 208 173 224', w: 1.5, delay: 9, D: 22, hold: 20, D2: 20, start: 0 },
-  { d: 'M195 192 C194 203 197 212 195 234', w: 1.7, delay: 11, D: 24, hold: 20, D2: 20, start: 0 },
-  { d: 'M219 192 C220 202 217 210 219 228', w: 1.5, delay: 13, D: 22, hold: 20, D2: 20, start: 0 },
-  { d: 'M241 192 C241 204 244 212 242 238', w: 1.7, delay: 15, D: 24, hold: 20, D2: 20, start: 0 },
-];
+export type FlowDef = {
+  d: string;
+  w: number;
+  delay: number;
+  D: number;
+  hold: number;
+  D2: number;
+  start: number;
+  /** Vitesse du front en unités par seconde : si elle est donnée, elle remplace D. */
+  speed?: number;
+  /** Avance à vitesse constante (sinon elle ralentit en descendant). */
+  lin?: boolean;
+  /** Intensité (1 par défaut) : plus petit = plus discret. */
+  dim?: number;
+  /** Bords lisses et peu de fissures (pour que les lettres restent lisibles). */
+  clean?: boolean;
+};
+/** Décale tous les points (paires x y) d'un tracé écrit avec des coordonnées absolues. */
+const shift = (d: string, dx: number, dy: number): string => {
+  let i = 0;
+  return d.replace(/-?\d+(\.\d+)?/g, (m) => String(+(parseFloat(m) + (i++ % 2 === 0 ? dx : dy)).toFixed(2)));
+};
 
-/**
- * « JDED » écrit en lave sur la pente. Chaque lettre est un seul trait continu (dessiné comme avec un stylo
- * de lave) dans une boîte de 19 de haut ; x = position de la lettre, y0 = haut de la ligne.
- */
-export const LETTERS: { d: string; x: number }[] = [
-  { d: 'M3.2 17 C3.6 20.6 6.4 21.8 8.8 21.8 C11.4 21.8 12.4 19.6 12.4 16.6 L12.4 2.5', x: 163.75 },
-  { d: 'M2.5 2.5 L2.5 21.5 L8 21.5 C14.5 21.5 15.5 17 15.5 12 C15.5 7 14.5 2.5 8 2.5 L2.5 2.5', x: 186.25 },
-  { d: 'M14 2.5 L2.5 2.5 L2.5 12 L11 12 L2.5 12 L2.5 21.5 L14 21.5', x: 210.75 },
-  { d: 'M2.5 2.5 L2.5 21.5 L8 21.5 C14.5 21.5 15.5 17 15.5 12 C15.5 7 14.5 2.5 8 2.5 L2.5 2.5', x: 232.75 },
+/** La lave part du cratère, descend droit vers le haut d'une lettre, puis trace la lettre en coulant. */
+const approach = (tx: number, ty: number): string => {
+  const sx = 207 + (tx - 207) * 0.08;
+  return `M${sx.toFixed(1)} 96 C${(sx + (tx - sx) * 0.15).toFixed(1)} ${(96 + (ty - 96) * 0.4).toFixed(1)} ${tx} ${(ty - (ty - 96) * 0.4).toFixed(1)} ${tx} ${ty}`;
+};
+
+/** « JDED » : chaque lettre est un trait continu de 19 de haut (y de 2,5 à 21,5), tracé par une coulée. */
+export const LETTER_Y0 = 170;
+const LX = { J: 163.75, D1: 186.25, E: 210.75, D2: 232.75 };
+const letterFlow = (x: number, startX: number, start: string, rest: string): string => {
+  const tx = x + startX;
+  return approach(tx, LETTER_Y0 + (start === 'top' ? 2.5 : -0.5)) + ' ' + shift(rest, x, LETTER_Y0);
+};
+const J = letterFlow(LX.J, 12.4, 'top', 'L12.4 16.6 C12.4 19.6 11.4 21.8 8.8 21.8 C6.4 21.8 3.6 20.6 3.2 17');
+const D = (x: number) => letterFlow(x, 2.5, 'top', 'L2.5 19.5 Q2.5 21.5 4.5 21.5 L8 21.5 C14.5 21.5 15.5 17 15.5 12 C15.5 7 14.5 2.5 8 2.5 L4.5 2.5');
+const E = letterFlow(LX.E, 14, 'above', 'Q14 2.5 11 2.5 L4.5 2.5 Q2.5 2.5 2.5 4.5 L2.5 19.5 Q2.5 21.5 4.5 21.5 L14 21.5');
+const E_MID = shift('M2.5 12 L11.5 12', LX.E, LETTER_Y0);
+
+// Les coulées de lettres sont fines et un peu plus sombres (dim) : le nom se devine, il ne crie pas.
+const LET = { w: 1.55, hold: 130, D2: 40, start: 0, speed: 8, lin: true, dim: 0.78, clean: true };
+export const FLOWS: FlowDef[] = [
+  { d: J, delay: 0, D: 0, ...LET },
+  { d: D(LX.D1), delay: 2, D: 0, ...LET },
+  { d: E, delay: 4, D: 0, ...LET },
+  // La barre du milieu du E : une branche qui part du montant, une fois la coulée passée
+  { d: E_MID, delay: 17, D: 0, ...LET, speed: 4, hold: 117 },
+  { d: D(LX.D2), delay: 6, D: 0, ...LET },
+  // Deux grandes coulées sur les flancs, loin des lettres
+  { d: 'M198 98 C186 112 168 124 152 142 C140 156 130 176 124 202', w: 2.2, delay: 6, D: 40, hold: 40, D2: 30, start: 0, dim: 0.85 },
+  { d: 'M224 98 C238 112 250 126 258 142 C268 160 276 178 282 202', w: 2.0, delay: 12, D: 40, hold: 40, D2: 30, start: 0, dim: 0.85 },
 ];
-export const LETTERS_Y0 = 170;
 
 /** Ravines et arêtes dessinées sur le cône (relief). */
 export const RIDGES: { d: string; dark: boolean }[] = [
