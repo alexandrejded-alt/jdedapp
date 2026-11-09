@@ -165,6 +165,12 @@ export function SlotsPanel() {
     toast(error ? friendlyError(error) : 'Créneau supprimé.', !!error);
     await load();
   }
+  /** Supprime d'un coup tous les créneaux (à venir) d'une journée. */
+  async function removeDay(day: string, list: Slot[]) {
+    const { error } = await supabase.from('slots').delete().in('id', list.map((x) => x.id));
+    toast(error ? friendlyError(error) : `Journée du ${dayLong(day)} supprimée.`, !!error);
+    await load();
+  }
   async function freeSlot(bookingId: string) {
     const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
     toast(error ? friendlyError(error) : 'Créneau libéré.', !!error);
@@ -298,8 +304,20 @@ export function SlotsPanel() {
       )}
       {[...byDay.entries()].map(([d, list]) => (
         <div className="list" key={d}>
-          <div className="day-title" style={{ fontSize: 19 }}>
-            {dayLong(d)}
+          <div className="day-head">
+            <div className="day-title" style={{ fontSize: 19 }}>
+              {dayLong(d)}
+            </div>
+            <ConfirmButton
+              label="Supprimer la journée"
+              armedLabel={
+                list.some((x) => who[x.id])
+                  ? `Confirmer : ${list.filter((x) => who[x.id]).length} coupe(s) réservée(s) seront annulées`
+                  : `Confirmer : ${list.length} créneau${list.length > 1 ? 'x' : ''}`
+              }
+              ariaLabel={`Supprimer tous les créneaux du ${dayLong(d)}`}
+              onConfirm={() => removeDay(d, list)}
+            />
           </div>
           {list.map((s) => {
             const booking = who[s.id];

@@ -38,7 +38,13 @@ export function authError(e: unknown): string {
   if (m.includes('invalid') && m.includes('email')) return 'Cette adresse e-mail ne semble pas valide.';
   if (m.includes('failed to fetch') || m.includes('networkerror') || m.includes('load failed'))
     return 'Pas de connexion internet.';
-  return 'Une erreur est survenue, réessaie.';
+  if (m.includes('api key') || m.includes('apikey') || m.includes('jwt'))
+    return 'La clé Supabase est refusée. Vérifie NEXT_PUBLIC_SUPABASE_ANON_KEY dans .env.local, puis relance npm run dev.';
+  if (m.includes('database error'))
+    return "Supabase a un souci côté base. Vérifie que supabase/schema.sql a bien été lancé en entier.";
+  // En local, on affiche la vraie cause pour pouvoir la corriger. En ligne, message simple.
+  const detail = process.env.NODE_ENV !== 'production' && m ? ` (${m.slice(0, 140)})` : '';
+  return `Une erreur est survenue, réessaie.${detail}`;
 }
 
 /** Règles minimales du mot de passe : 8 caractères, une lettre, un chiffre. */
