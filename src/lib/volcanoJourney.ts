@@ -66,36 +66,32 @@ function fighter(
   kick = 0,
   showHead = true,
   guard = 0,
-  jerk = 0,
-  dickSize = 0,
-  holdHead = false
+  jerk = 0,          // 0 → 1 = intensité de la branlette
+  dickOut = true     // afficher la bite
 ) {
   g.save();
   g.translate(x, y);
   g.rotate(rotation);
-
   if (showHead) {
     g.save();
     g.translate(0, -100);
     portrait(g, color, name, photo);
     g.restore();
   }
-
   g.scale(facing, 1);
   g.lineCap = 'round';
   g.lineJoin = 'round';
 
-  // Branlette beaucoup plus marquée
-  const stroke = Math.sin(pose * 2.8) * 26 * jerk;
-  const hip = Math.sin(pose * 2.8) * 6 * jerk;
-  const punch = Math.sin(pose) * 18 * (1 - jerk);
+  const punch = Math.sin(pose) * 28;
+  const jerkOffset = Math.sin(pose * 2.2) * 18 * jerk; // mouvement de branlette
 
+  // Corps + membres
   const limbs = [
-    [[0, -72], [0, -36 + hip]],
-    [[0, -36], [-18 - kick * 8, -kick * 12]],
-    [[0, -36], [22 + kick * 58, -3 - kick * 66]],
-    [[0, -62], [18, -51 - guard * 17], [38 + punch, -66 - guard * 24]],
-    [[0, -61], [-16, -42], [-6 + stroke * 0.4, -22], [8 + stroke, -8]]
+    [[0, -72], [0, -36]],                                    // torse
+    [[0, -36], [-18 - kick * 8, -kick * 12]],                 // jambe G
+    [[0, -36], [22 + kick * 58, -3 - kick * 66]],              // jambe D
+    [[0, -62], [18, -51 - guard * 17], [40 + punch, -66 - guard * 24]], // bras D
+    [[0, -61], [-19, -45 - guard * 22], [-9 + jerkOffset, -30 - guard * 48]] // bras G (celui qui branle)
   ];
 
   for (const points of limbs) line(g, points, '#090b12', 10);
@@ -103,29 +99,20 @@ function fighter(
   g.shadowBlur = 7;
   for (const points of limbs) line(g, points, color, 5);
 
-  // Zizi qui pousse
-  if (dickSize > 0.05 && facing === 1) {
-    const len = 8 + dickSize * 28;
-    const thick = 3.5 + dickSize * 3;
-    const angle = -0.55 + Math.sin(pose * 2.8) * 0.18 * jerk;
-
+  // ===== BITE =====
+  if (dickOut && facing === 1) { // uniquement le perso de gauche
+    const dickLen = 22 + jerk * 6;
+    const dickAngle = -0.35 + Math.sin(pose * 1.8) * 0.25 * jerk;
     g.save();
-    g.translate(3, -26 + hip);
-    g.rotate(angle);
-
-    line(g, [[0, 0], [len, 0]], '#090b12', thick + 3);
-    line(g, [[0, 0], [len, 0]], color, thick);
-    ellipse(g, len + 1, 0, 5.5 + dickSize * 1.5, 4.2 + dickSize, color);
-    line(g, [[3, -1.8], [len - 4, -1.8]], '#090b12', 1.3);
-    g.restore();
-  }
-
-  // Tête tenue dans la main
-  if (holdHead && photo) {
-    g.save();
-    g.translate(32, -18);
-    g.scale(0.72, 0.72);
-    portrait(g, '#ffbf85', name, photo, false);
+    g.translate(4, -28); // bassin
+    g.rotate(dickAngle);
+    // tige
+    line(g, [[0, 0], [dickLen, 0]], '#090b12', 9);
+    line(g, [[0, 0], [dickLen, 0]], color, 5);
+    // gland
+    ellipse(g, dickLen + 2, 0, 5, 4, color);
+    // veines (détail stick)
+    line(g, [[4, -1.5], [dickLen - 3, -1.5]], '#090b12', 1.2);
     g.restore();
   }
 
@@ -149,63 +136,25 @@ function impact(g: CanvasRenderingContext2D, x: number, y: number, age: number, 
   g.restore();
 }
 
-/** Gros jet style porno */
-function cumshot(g: CanvasRenderingContext2D, x: number, y: number, age: number, dir = 1) {
-  if (age < 0 || age > 2.1) return;
-
+/** Éjaculation – giclées de lait blanc */
+function ejaculation(g: CanvasRenderingContext2D, x: number, y: number, age: number, dir = 1) {
+  if (age < 0 || age > 1.4) return;
+  const p = clamp(age / 0.55);
   g.save();
-  g.shadowColor = '#fff8e0';
-  g.shadowBlur = 12;
+  g.globalAlpha *= 1 - ease((age - 0.6) / 0.8);
+  g.shadowColor = '#fff8e8';
+  g.shadowBlur = 8;
 
-  for (let s = 0; s < 5; s++) {
-    const delay = s * 0.07;
-    const a = age - delay;
-    if (a < 0) continue;
-
-    const p = clamp(a / 0.85);
-    const fade = 1 - ease((a - 0.7) / 1.2);
-    g.globalAlpha = fade * 0.95;
-
-    const spread = (s - 2) * 0.19;
-    const speed = 130 + s * 18;
-    const endX = x + Math.cos(spread) * speed * p * dir;
-    const endY = y + Math.sin(spread) * speed * p * 0.65 - 55 * p * p;
-
-    g.strokeStyle = s % 2 === 0 ? '#fffef6' : '#f7e9c4';
-    g.lineWidth = 5.5 - s * 0.5;
-    g.beginPath();
-    g.moveTo(x, y);
-    g.quadraticCurveTo(
-      x + (endX - x) * 0.4,
-      y - 30 - s * 8,
-      endX,
-      endY
-    );
-    g.stroke();
-
-    for (let d = 0; d < 4; d++) {
-      const t = 0.3 + d * 0.18;
-      const dx = x + (endX - x) * t + (noise(s * 10 + d) - 0.5) * 18;
-      const dy = y + (endY - y) * t + Math.sin(t * Math.PI) * -20;
-      const size = 3.5 + noise(s + d) * 3;
-      ellipse(g, dx, dy, size, size * 0.75, '#fffef2');
-    }
+  for (let i = 0; i < 18; i++) {
+    const a = (i / 18) * 0.9 - 0.45;
+    const speed = 90 + noise(i) * 70;
+    const px = x + Math.cos(a) * speed * p * dir;
+    const py = y + Math.sin(a) * speed * p * 0.7 - 40 * p * p;
+    const size = 3 + noise(i + 30) * 4 * (1 - p * 0.6);
+    ellipse(g, px, py, size, size * 0.7, i % 3 === 0 ? '#fffef5' : '#f5e8c8');
   }
-
-  if (age > 0.25 && age < 0.9) {
-    const p = (age - 0.25) / 0.65;
-    g.globalAlpha = (1 - p) * 0.8;
-    for (let i = 0; i < 14; i++) {
-      const ang = (i / 14) * TAU;
-      const r = 12 + p * 55;
-      ellipse(g,
-        x + Math.cos(ang) * r * 0.7,
-        y + Math.sin(ang) * r * 0.45 - 10,
-        4, 3, '#fff8e8'
-      );
-    }
-  }
-
+  // gros jet principal
+  line(g, [[x, y], [x + 70 * p * dir, y - 25 * p]], '#fff9e0', 4);
   g.restore();
 }
 
@@ -218,6 +167,7 @@ function giantScissors(g: CanvasRenderingContext2D, t: number) {
   g.save();
   g.translate(-12, -132);
   g.rotate((1 - reveal) * -1.4 - away * .9);
+  // taille réduite (0.72 au lieu de 1)
   const scale = reveal * (1 - away * .4) * 0.72;
   g.scale(scale, scale);
   g.globalAlpha *= 1 - away;
@@ -259,27 +209,13 @@ function giantScissors(g: CanvasRenderingContext2D, t: number) {
 
 function duel(g: CanvasRenderingContext2D, t: number, portraits: JourneyPortraits) {
   const jump = ease((t - 2.8) / .9);
-  let lx = -260 + jump * 192;
-  let rx = 260 - jump * 192;
-  let ly = -35 - jump * 23 - Math.sin(jump * Math.PI) * 150;
-  let ry = ly;
+  let lx = -260 + jump * 192, rx = 260 - jump * 192;
+  let ly = -35 - jump * 23 - Math.sin(jump * Math.PI) * 150, ry = ly;
   let lr = 0, rr = 0, lk = 0, rk = 0, guard = 0;
-  let jerk = 0;
-  let dickSize = 0;
+  let jerk = 0; // intensité branlette
 
-  // === États exclusifs de la tête ===
-  // 0 = encore sur le corps
-  // 1 = par terre
-  // 2 = dans la main de JDED
-  // 3 = en train d’être jetée
-  let headState = 0;
-  let headX = 102;
-  let headY = -58;
-  let headRot = 0;
+  const fighting = t >= 3.7 && t < 7.25;
 
-  const fighting = t >= 3.7 && t < 7.1;
-
-  // --- Combat classique ---
   if (t >= 3.7 && t < 4.65) {
     const beat = Math.sin((t - 3.7) * 25);
     lx += Math.max(0, beat) * 22;
@@ -294,8 +230,8 @@ function duel(g: CanvasRenderingContext2D, t: number, portraits: JourneyPortrait
     rk = Math.max(0, Math.sin(p * Math.PI * 2));
     rx += Math.sin(p * Math.PI) * 35;
     rr = Math.sin(p * Math.PI) * .4;
-  } else if (t >= 5.5 && t < 6.5) {
-    const p = (t - 5.5) / 1.0;
+  } else if (t >= 5.5 && t < 6.45) {
+    const p = (t - 5.5) / .95;
     ly -= Math.sin(p * Math.PI) * 130;
     ry -= Math.sin(p * Math.PI) * 115;
     lr = -Math.sin(p * Math.PI) * TAU;
@@ -304,68 +240,22 @@ function duel(g: CanvasRenderingContext2D, t: number, portraits: JourneyPortrait
     rx -= Math.sin(p * Math.PI) * 18;
     lk = Math.sin(p * Math.PI);
     rk = lk;
-  } else if (t >= 6.5 && t < 7.1) {
-    const p = (t - 6.5) / .6;
-    lx += Math.sin(p * 16) * 10;
-    guard = 0.4;
+  } else if (t >= 6.45 && t < 7.25) {
+    // Phase branlette intensive
+    const p = (t - 6.45) / .8;
+    jerk = ease(p);
+    lx += Math.sin(p * 18) * 8;
+    guard = 0.3;
   }
 
-  // Position de base après le combat
-  if (t >= 7.1) {
-    lx = -70;
-    ly = -58;
-    rx = 105;
-    ry = -58;
+  if (t >= 7.25) {
+    lx = -68;
+    rx = 102;
+    ly = ry = -58;
+    jerk = 1; // il continue de se branler jusqu’à la coupe
   }
 
-  // Ciseaux
-  giantScissors(g, t);
-
-  // ========== GESTION PROPRE DE LA TÊTE ==========
-  if (t >= CUT_AT && t < 10.2) {
-    // 1. Tête tombe par terre
-    headState = 1;
-    const fall = ease(clamp((t - CUT_AT) / 0.6));
-    headX = 102 + fall * 22;
-    headY = -58 + fall * 98;
-    headRot = fall * 1.1;
-  } else if (t >= 10.2 && t < 11.35) {
-    // 2. JDED marche et ramasse la tête
-    headState = 2;
-    const walk = ease(clamp((t - 10.2) / 0.65));
-    lx = -70 + walk * 110;
-    // la tête suit sa main
-    headX = lx + 34;
-    headY = ly - 12;
-    headRot = 0.15;
-  } else if (t >= 11.35) {
-    // 3. Il jette la tête dans la lave (mouvement clean)
-    headState = 3;
-    const throwP = clamp((t - 11.35) / 0.65);
-    const arc = Math.sin(throwP * Math.PI);
-
-    headX = 155 + throwP * 55;
-    headY = -55 - arc * 110 + throwP * throwP * 175;
-    headRot = throwP * 8;
-
-    // petit recul de JDED après le lancer
-    lx = 40 + throwP * 15;
-  }
-
-  // Zizi + branlette
-  if (t >= 8.5) {
-    dickSize = ease(clamp((t - 8.5) / 0.5));
-  }
-  if (t >= 8.7 && t < 10.15) {
-    jerk = ease(clamp((t - 8.7) / 0.4));
-  }
-
-  // Gros jet
-  if (t >= 9.2 && t < 10.8) {
-    cumshot(g, lx + 36, ly - 16, t - 9.2, 1);
-  }
-
-  // Motion echoes pendant le combat
+  // Motion echoes
   if (fighting) {
     for (let i = 3; i > 0; i--) {
       g.save();
@@ -376,64 +266,81 @@ function duel(g: CanvasRenderingContext2D, t: number, portraits: JourneyPortrait
     }
   }
 
-  // Corps de l’adversaire (JAMAIS de tête après la coupe)
+  giantScissors(g, t);
+
+  const victory = ease((t - (CUT_AT + .4)) / .85);
+
+  // JDED (gauche) – avec bite + branlette
+  fighter(g, lx - victory * 70, ly, 1, fighting ? t * 30 : t * 22, '#a0e8ff', 'JDED', portraits.barber, lr, lk, true, guard, jerk, true);
+
   if (t < CUT_AT) {
-    fighter(g, rx, ry, -1, fighting ? t * 30 + Math.PI : 0, '#ffbf85', portraits.name, portraits.guest, rr, rk, true, guard);
+    // Adversaire encore entier
+    fighter(g, rx, ry, -1, fighting ? t * 30 + Math.PI : 0, '#ffbf85', portraits.name, portraits.guest, rr, rk, true, guard, 0, false);
   } else {
-    const dissolve = ease(clamp((t - CUT_AT) / 0.75));
+    // === APRÈS LA COUPE ===
+    // Corps sans tête qui se dissout
+    const dissolve = ease((t - CUT_AT) / .65);
     if (dissolve < 1) {
       g.save();
       g.globalAlpha *= 1 - dissolve;
-      fighter(g, rx + 10 * dissolve, ry + 6 * dissolve, -1, 0, '#ffbf85', portraits.name, null, 0.08, 0, false);
+      fighter(g, rx + 18 * dissolve, ry + 10 * dissolve, -1, 0, '#ffbf85', portraits.name, null, .15 * dissolve, 0, false, 0, 0, false);
+      g.restore();
+      for (let i = 0; i < 16; i++) {
+        ellipse(g, rx + (noise(i) - .5) * 100 * dissolve, ry - 40 + (noise(i + 20) - .5) * 160 * dissolve, 2, 2, '#ffd580');
+      }
+    }
+
+    // Tête qui tombe (medallion)
+    const flight = clamp((t - CUT_AT) / (IMPACT_AT - CUT_AT));
+    const sink = ease((t - IMPACT_AT) / .32);
+    if (sink < 1) {
+      const x = 102 + 8 * flight + Math.sin(flight * Math.PI) * 45;
+      const y = -158 - 110 * Math.sin(flight * Math.PI) + 226 * flight * flight + sink * 65;
+      g.save();
+      g.beginPath();
+      g.rect(-450, -700, 900, 795);
+      g.clip();
+      g.translate(x, y);
+      g.rotate(flight * TAU * 1.3);
+      portrait(g, '#ffbf85', portraits.name, portraits.guest, false);
+
+      // Lait qui coule sur le visage après l’éjaculation
+      if (t > CUT_AT + 0.35) {
+        const milkAge = t - (CUT_AT + 0.35);
+        g.globalAlpha = 0.85;
+        for (let i = 0; i < 7; i++) {
+          const dropY = 8 + milkAge * 40 + noise(i) * 12;
+          ellipse(g, (noise(i) - .5) * 18, dropY, 3 + noise(i) * 2, 4, '#fff8e0');
+        }
+      }
       g.restore();
     }
   }
 
-  // JDED (on ne lui donne la tête dans la main QUE pendant headState === 2)
-  fighter(
-    g, lx, ly, 1,
-    t * 22,
-    '#a0e8ff', 'JDED', portraits.barber,
-    lr, lk, true, guard,
-    jerk, dickSize,
-    headState === 2   // ← seulement ici
-  );
-
-  // ===== DESSIN UNIQUE DE LA TÊTE =====
-  if (headState === 1 || headState === 3) {
-    // Par terre ou en vol (pas dans la main)
-    g.save();
-    g.translate(headX, headY);
-    g.rotate(headRot);
-    portrait(g, '#ffbf85', portraits.name, portraits.guest, false);
-
-    // Lait qui coule quand elle est au sol
-    if (headState === 1 && t > 9.3) {
-      const milk = t - 9.3;
-      for (let i = 0; i < 5; i++) {
-        ellipse(g, (noise(i) - 0.5) * 14, 10 + milk * 22 + i * 4, 2.6, 3.2, '#fff8e0');
-      }
-    }
-    g.restore();
-  }
-
-  // Impacts
-  for (const [at, x, y] of [[3.94, 0, -123], [4.19, 7, -120], [4.44, 0, -120], [5.04, 40, -108], [5.94, 0, -220], [6.59, 25, -120]]) {
+  // Impacts classiques
+  for (const [at, x, y] of [[3.94, 0, -123], [4.19, 7, -120], [4.44, 0, -120], [5.04, 40, -108], [5.94, 0, -220], [6.59, 25, -120], [6.89, 30, -110]]) {
     impact(g, x, y, t - at);
   }
-  impact(g, 102, -110, t - CUT_AT, true);
+  impact(g, 102, -132, t - CUT_AT, true);
 
-  if (t >= CUT_AT && t < CUT_AT + 0.5) {
+  // Éjaculation principale (juste avant / pendant la coupe)
+  if (t > 7.6 && t < 9.2) {
+    ejaculation(g, lx + 35, ly - 25, t - 7.7, 1);
+  }
+
+  // Texte SNIP
+  if (t >= CUT_AT && t < CUT_AT + .5) {
     g.save();
-    g.globalAlpha *= 1 - ease((t - CUT_AT) / 0.5);
+    g.globalAlpha *= 1 - ease((t - CUT_AT) / .5);
     g.fillStyle = '#fff1c2';
     g.font = '900 26px sans-serif';
     g.textAlign = 'center';
-    g.fillText('SNIP !', 100, -200 - (t - CUT_AT) * 25);
+    g.fillText('SNIP !', 100, -208 - (t - CUT_AT) * 30);
     g.restore();
   }
 }
 
+/** The very same silhouette/letters as the persistent background, enlarged into the shot. */
 function familiarMountain(g: CanvasRenderingContext2D) {
   g.save(); g.translate(-207 * 3.2, -90 * 3.2); g.scale(3.2, 3.2);
   polygon(g, BACK, '#241a20');
@@ -448,6 +355,7 @@ function familiarMountain(g: CanvasRenderingContext2D) {
 
 function crater(g: CanvasRenderingContext2D, t: number) {
   familiarMountain(g);
+  // Outer cone: slopes and fissures make this a mountain summit, not a flat orange floor.
   const slope = g.createLinearGradient(0, -60, 0, 550);
   slope.addColorStop(0, '#6a3a2b'); slope.addColorStop(.32, '#302027'); slope.addColorStop(1, '#0c0b11');
   polygon(g, [[-290, -30], [-355, 45], [-430, 195], [-620, 430], [-760, 620], [760, 620], [620, 430], [430, 195], [355, 45], [290, -30]], slope);
@@ -457,6 +365,7 @@ function crater(g: CanvasRenderingContext2D, t: number) {
     line(g, [[x, y], [x * 1.25, y + 120], [x * 1.55 + side * 20, y + 280], [x * 1.9, y + 460]], '#100d13', 4 + noise(i) * 8);
     if (i % 3 === 0) line(g, [[x, y], [x * 1.25, y + 120], [x * 1.55 + side * 20, y + 280]], '#fc6721', 1.5);
   }
+  // Thick elliptical rim and a deep inner wall, seen in perspective.
   ellipse(g, 0, 16, 325, 120, '#75412e');
   ellipse(g, 0, 23, 302, 104, '#2a171a');
   const wall = g.createLinearGradient(0, -65, 0, 140);
@@ -484,11 +393,13 @@ function crater(g: CanvasRenderingContext2D, t: number) {
     g.beginPath(); g.ellipse((noise(i + 99) - .5) * 420, 58 + noise(i + 88) * 50, 4 + p * 23, 2 + p * 5, 0, 0, TAU); g.stroke();
   }
   g.restore();
+  // Jagged rear rim: both opponents land on this lip over the lava.
   polygon(g, [[-320, -10], [-275, -43], [-230, -55], [-170, -67], [-120, -62], [-65, -70], [-20, -63], [25, -68], [75, -60], [125, -67], [190, -52], [245, -46], [302, -20], [280, -6], [220, -24], [160, -36], [80, -38], [0, -42], [-100, -40], [-190, -30], [-260, -18]], '#49302c');
   line(g, [[-304, -14], [-230, -48], [-170, -57], [-100, -52], [0, -54], [95, -50], [180, -43], [260, -29], [300, -12]], '#bd7047', 2);
 }
 
 function foregroundRim(g: CanvasRenderingContext2D) {
+  // Leave the lava surface and the impact point visible inside the caldera.
   g.beginPath(); g.ellipse(0, 20, 325, 120, 0, 0, Math.PI);
   g.ellipse(0, 43, 278, 91, 0, Math.PI, 0, true); g.closePath();
   const rim = g.createLinearGradient(0, 100, 0, 155); rim.addColorStop(0, '#a35633'); rim.addColorStop(.5, '#482a25'); rim.addColorStop(1, '#23191e');
@@ -504,6 +415,7 @@ function splash(g: CanvasRenderingContext2D, age: number) {
   if (age < 0 || age > 1.8) return;
   const p = clamp(age / .7), fade = 1 - ease((age - .65) / 1.1);
   g.save(); g.globalAlpha *= fade; g.shadowColor = '#ff751c'; g.shadowBlur = 16;
+  // Crown of lava opens exactly where the guest breaks the surface.
   const crown: number[][] = [[110 - 65 * p, 95]];
   for (let i = 0; i <= 14; i++) {
     const x = 110 + (i / 14 - .5) * 130 * p;
@@ -594,6 +506,7 @@ export function drawJourney(g: CanvasRenderingContext2D, w: number, h: number, t
     const shake = cutShake * 3 + splashShake * 6;
     g.translate(w / 2 + Math.sin(t * 83) * shake, h * .57 + Math.cos(t * 69) * shake * .5); g.scale(scale, scale);
     const heat = g.createRadialGradient(0, 35, 0, 0, 35, 440); heat.addColorStop(0, '#ff65133b'); heat.addColorStop(1, '#ff651300'); g.fillStyle = heat; g.fillRect(-600, -500, 1200, 1100);
+    // Ash drifts up behind the caldera, leaving the fighters readable.
     for (let i = 0; i < 10; i++) { const p = (t * .08 + noise(i)) % 1; ellipse(g, 35 + Math.sin(i * 4) * 45 + p * 50, -20 - p * 350, 20 + p * 65, 15 + p * 50, `rgba(98,70,65,${(1 - p) * .09})`); }
     crater(g, t);
     duel(g, t, portraits);
@@ -601,10 +514,12 @@ export function drawJourney(g: CanvasRenderingContext2D, w: number, h: number, t
     eruption(g, t - FIREWORKS_AT - .25);
     foregroundRim(g);
     fireworks(g, t - FIREWORKS_AT);
+    // Keep the brand from the original volcano visible on its front face.
     g.save(); g.translate(-207 * 2, 160 - LETTERS_Y0 * 2); g.scale(2, 2); g.strokeStyle = '#ff9b43'; g.lineWidth = 1.4; g.shadowColor = '#ff681e'; g.shadowBlur = 10;
     for (const letter of LETTERS) { g.save(); g.translate(letter.x, LETTERS_Y0); g.stroke(new Path2D(letter.d)); g.restore(); } g.restore();
     g.restore();
   }
+  // Radial star streaks converge on the original volcano on both legs of the trip.
   const flight = t < 2.2 ? clamp(t / 2.2) : t > RETURN_AT ? 1 - clamp((t - RETURN_AT) / 1.6) : 0;
   const streakAlpha = Math.sin(flight * Math.PI);
   if (streakAlpha > 0) {
@@ -619,17 +534,6 @@ export function drawJourney(g: CanvasRenderingContext2D, w: number, h: number, t
   g.save(); g.globalAlpha = ease(t / .4) * (1 - ease((t - JOURNEY_DURATION + .5) / .5)); g.textAlign = 'center';
   g.fillStyle = '#ffbd73'; g.font = '700 10px sans-serif'; g.fillText('J D E D   /   C U T', w / 2, Math.max(45, h * .09));
   g.fillStyle = '#fff1df'; g.font = `700 ${Math.min(17, w / 24)}px sans-serif`;
-  const caption =
-    t < 2.35 ? 'CAP SUR LE VOLCAN' :
-    t < 3.7 ? 'LE DUEL DU CRATÈRE' :
-    t < 7.1 ? 'JDED VS TOI · COMBO' :
-    t < 8.3 ? 'LES CISEAUX' :
-    t < 8.7 ? 'TÊTE PAR TERRE' :
-    t < 9.3 ? 'LE ZIZI POUSSE...' :
-    t < 10.2 ? 'ÉJACULATION' :
-    t < 11.5 ? 'IL RAMASSE LA TÊTE' :
-    t < RETURN_AT ? 'DANS LA LAVE !' :
-    'RETOUR À LA RÉALITÉ';
-  g.fillText(caption, w / 2, Math.max(72, h * .135));
-  g.restore();
+  const caption = t < 2.35 ? 'CAP SUR LE VOLCAN' : t < 3.7 ? 'LE DUEL DU CRATÈRE' : t < 6.45 ? 'JDED VS TOI · COMBO' : t < 7.6 ? 'IL SE BRANLE...' : t < CUT_AT ? 'ÉJACULATION + CISEAUX' : t < IMPACT_AT ? 'TÊTE COUPÉE + LAIT' : t < FIREWORKS_AT + .5 ? 'PLOUF !' : t < RETURN_AT ? 'TA COUPE EST RÉSERVÉE' : 'RETOUR À LA RÉALITÉ';
+  g.fillText(caption, w / 2, Math.max(72, h * .135)); g.restore();
 }
