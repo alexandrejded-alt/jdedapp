@@ -70,6 +70,18 @@ const D = (x: number) => letterFlow(x, 2.5, 'top', 'L2.5 19.5 Q2.5 21.5 4.5 21.5
 const E = letterFlow(LX.E, 14, 'above', 'Q14 2.5 11 2.5 L4.5 2.5 Q2.5 2.5 2.5 4.5 L2.5 19.5 Q2.5 21.5 4.5 21.5 L14 21.5');
 const E_MID = shift('M2.5 12 L11.5 12', LX.E, LETTER_Y0);
 
+/**
+ * Lettres JDED en traits fixes (utilisées par l'animation « voyage » : VolcanoJourney).
+ * Le fond animé, lui, les dessine avec des coulées de lave (voir FLOWS).
+ */
+export const LETTERS_Y0 = LETTER_Y0;
+export const LETTERS: { d: string; x: number }[] = [
+  { d: 'M3.2 17 C3.6 20.6 6.4 21.8 8.8 21.8 C11.4 21.8 12.4 19.6 12.4 16.6 L12.4 2.5', x: LX.J },
+  { d: 'M2.5 2.5 L2.5 21.5 L8 21.5 C14.5 21.5 15.5 17 15.5 12 C15.5 7 14.5 2.5 8 2.5 L2.5 2.5', x: LX.D1 },
+  { d: 'M14 2.5 L2.5 2.5 L2.5 12 L11 12 L2.5 12 L2.5 21.5 L14 21.5', x: LX.E },
+  { d: 'M2.5 2.5 L2.5 21.5 L8 21.5 C14.5 21.5 15.5 17 15.5 12 C15.5 7 14.5 2.5 8 2.5 L2.5 2.5', x: LX.D2 },
+];
+
 // Les coulées de lettres sont fines et un peu plus sombres (dim) : le nom se devine, il ne crie pas.
 const LET = { w: 1.55, hold: 130, D2: 40, start: 0, speed: 8, lin: true, dim: 0.78, clean: true };
 export const FLOWS: FlowDef[] = [
