@@ -91,7 +91,9 @@ export function CutView({ userId, guestName, avatarPath }: { userId: string; gue
     <section className="cut-view">
       <div className="view-head">
         <div className="eyebrow">Réserver</div>
-        <h1 className="cut-word">Cut</h1>
+        <h1 className="cut-word" aria-label="Cut">
+            <CutLogo />
+          </h1>
         <p>Choisis ton jour, puis ton heure.</p>
       </div>
 
@@ -173,5 +175,41 @@ export function CutView({ userId, guestName, avatarPath }: { userId: string; gue
         />
       )}
     </section>
+  );
+}
+
+/** « CUT » dessiné comme de la lave coulée dans la roche : les mêmes lettres que sur le volcan, qui se tracent à l'ouverture. */
+const CUT_PATHS = [
+  'M14.5 5.5 Q14.5 2.5 11.5 2.5 L8.5 2.5 C4 2.5 2.5 6 2.5 12 C2.5 18 4 21.5 8.5 21.5 L11.5 21.5 Q14.5 21.5 14.5 18.5',
+  'M22.5 2.5 L22.5 15.5 C22.5 19.5 25 21.5 29 21.5 C33 21.5 35.5 19.5 35.5 15.5 L35.5 2.5',
+  'M41.5 2.5 L54.5 2.5',
+  'M48 2.5 L48 21.5',
+];
+function CutLogo() {
+  return (
+    <svg className="cut-logo" viewBox="0 0 57 24" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="cutLava" gradientUnits="userSpaceOnUse" x1="0" y1="1" x2="0" y2="23">
+          <stop offset="0" stopColor="#ffe9a8" />
+          <stop offset="0.45" stopColor="#ffa93a" />
+          <stop offset="1" stopColor="#ff5a14" />
+        </linearGradient>
+      </defs>
+      <g className="cut-groove" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {CUT_PATHS.map((d) => (
+          <path key={'g' + d} d={d} strokeWidth="5.2" />
+        ))}
+      </g>
+      <g className="cut-lava" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {CUT_PATHS.map((d, i) => (
+          <path key={'l' + d} d={d} pathLength={1} strokeWidth="3.2" style={{ animationDelay: `${0.1 + i * 0.22}s` }} />
+        ))}
+      </g>
+      <g className="cut-core" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {CUT_PATHS.map((d, i) => (
+          <path key={'c' + d} d={d} pathLength={1} strokeWidth="1" style={{ animationDelay: `${0.18 + i * 0.22}s` }} />
+        ))}
+      </g>
+    </svg>
   );
 }

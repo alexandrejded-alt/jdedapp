@@ -47,6 +47,8 @@ export type FlowDef = {
   clean?: boolean;
   /** Pause (en secondes) une fois éteinte, avant de recommencer : garde les coulées éphémères en phase avec les lettres. */
   rest?: number;
+  /** Irrégularité des bords (0 = lisse ; 1 = coulée naturelle). Par défaut : lisse si `clean`. */
+  rough?: number;
 };
 /** Décale tous les points (paires x y) d'un tracé écrit avec des coordonnées absolues. */
 const shift = (d: string, dx: number, dy: number): string => {
@@ -64,10 +66,10 @@ const approach = (tx: number, ty: number): string => {
  * « JDED » sur une première ligne, « CUT » en dessous : chaque lettre est un trait de 19 de haut
  * (y de 2,5 à 21,5), tracé par une coulée de lave qui part du cratère.
  */
-const LINE1_Y0 = 150;
-const LINE2_Y0 = 177;
+const LINE1_Y0 = 136;
+const LINE2_Y0 = 163;
 /** Couloir entre les deux lignes, où la lave file vers les lettres de CUT. */
-const CHANNEL = 175.5;
+const CHANNEL = 161.5;
 const LX = { J: 163.75, D1: 186.25, E: 210.75, D2: 232.75 };
 const CX = { C: 176.75, U: 198.75, T: 220.75 };
 const letterFlow = (x: number, startX: number, start: string, rest: string): string => {
@@ -83,8 +85,8 @@ const E_MID = shift('M2.5 12 L11.5 12', LX.E, LINE1_Y0);
  * Les lettres de CUT : la lave descend le long d'un flanc (gauche ou droite) pour ne pas croiser JDED,
  * puis arrive soit par le côté (C), soit par le couloir entre les deux lignes (U et T).
  */
-const SIDE_L = 158;
-const SIDE_R = 259;
+const SIDE_L = 162;
+const SIDE_R = 255;
 const routeLeft = (endX: number, endY: number, mode: 'side' | 'drop'): string => {
   const head = `M200 97 C186 110 ${SIDE_L + 2} 124 ${SIDE_L} 146`;
   return mode === 'side'
@@ -117,7 +119,7 @@ export const LETTERS: { d: string; x: number }[] = [
 ];
 
 // Les coulées de lettres sont fines et un peu plus sombres (dim) : le nom se devine, il ne crie pas.
-const LET = { w: 1.55, hold: 130, D2: 40, start: 0, speed: 30, lin: true, dim: 0.8, clean: true };
+const LET = { w: 2.3, hold: 130, D2: 40, start: 0, speed: 30, lin: true, dim: 0.78, clean: true, rough: 0.6 };
 // CUT a un plus long chemin à faire (le flanc, puis le couloir) : la lave y court un peu plus vite.
 const LET2 = { ...LET, speed: 46 };
 export const FLOWS: FlowDef[] = [
@@ -130,14 +132,14 @@ export const FLOWS: FlowDef[] = [
   // CUT, juste après : la lave file le long d'un flanc (route qui s'efface), puis trace la lettre
   // C (le bas se détache du milieu), U, T (sa barre jaillit du haut du pied)
   { d: R_C, delay: 2.6, D: 0, ...LET2, hold: 1.2, D2: 3, rest: 163 },
-  { d: C_TOP, delay: 5.4, D: 0, ...LET2, hold: 127.6 },
-  { d: C_BOT, delay: 5.4, D: 0, ...LET, speed: 30, hold: 127.6 },
+  { d: C_TOP, delay: 4.95, D: 0, ...LET2, hold: 128 },
+  { d: C_BOT, delay: 4.95, D: 0, ...LET, speed: 30, hold: 128 },
   { d: R_U, delay: 3.4, D: 0, ...LET2, hold: 1.2, D2: 3, rest: 163 },
-  { d: U, delay: 6.45, D: 0, ...LET2, hold: 126.5 },
+  { d: U, delay: 6.0, D: 0, ...LET2, hold: 127 },
   { d: R_T, delay: 4.2, D: 0, ...LET2, hold: 1.2, D2: 3, rest: 163 },
-  { d: T, delay: 7.0, D: 0, ...LET2, hold: 126 },
-  { d: T_BAR_L, delay: 7.0, D: 0, ...LET, speed: 14, hold: 126 },
-  { d: T_BAR_R, delay: 7.0, D: 0, ...LET, speed: 14, hold: 126 },
+  { d: T, delay: 6.55, D: 0, ...LET2, hold: 126.5 },
+  { d: T_BAR_L, delay: 6.55, D: 0, ...LET, speed: 14, hold: 126.5 },
+  { d: T_BAR_R, delay: 6.55, D: 0, ...LET, speed: 14, hold: 126.5 },
   // Deux grandes coulées sur les flancs, loin des lettres
   { d: 'M198 98 C186 112 168 124 152 142 C140 156 130 176 124 202', w: 2.2, delay: 3, D: 14, hold: 40, D2: 30, start: 0, dim: 0.85 },
   { d: 'M224 98 C238 112 250 126 258 142 C268 160 276 178 282 202', w: 2.0, delay: 5, D: 14, hold: 40, D2: 30, start: 0, dim: 0.85 },

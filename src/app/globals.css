@@ -462,12 +462,21 @@ html[data-stage="tv"] .tabbar { border-top-color: rgba(244, 189, 79, 0.4); box-s
 .tv-top .eyebrow { font-size: 19px; letter-spacing: 0.26em; color: var(--gold); text-shadow: 0 0 12px rgba(255, 106, 19, 0.85), 0 0 28px rgba(255, 106, 19, 0.45); }
 
 /* ---------- Cut : une typo plus affirmée (enseigne de barbier) ---------- */
-.cut-view h1:not(.cut-word), .cut-view .day-title { font-family: "Alfa Slab One", var(--display); letter-spacing: 0.015em; }
-/* Le mot « Cut » : police graphique (Bungee Inline), dégradé braise → or, et une ligne de coupe en pointillés */
-.cut-view h1.cut-word { font-family: "Bungee Inline", "Alfa Slab One", var(--display); font-weight: 400; font-size: 54px; line-height: 1; letter-spacing: 0.04em; display: flex; align-items: center; gap: 14px; text-transform: uppercase; background: linear-gradient(180deg, #ffe3a1 0%, #ffb23a 42%, #ff6a13 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 14px rgba(255, 106, 19, 0.35)); }
-.cut-view h1.cut-word::after { content: ""; flex: 1; height: 0; border-top: 2px dashed rgba(244, 189, 79, 0.55); transform: translateY(2px); }
+.cut-view .day-title { font-family: "Alfa Slab One", var(--display); letter-spacing: 0.015em; }
+/* Le mot « Cut » : de la lave coulée dans la roche (mêmes lettres que sur le volcan) */
+.cut-view h1.cut-word { display: block; line-height: 0; margin: 2px 0 4px; }
+.cut-logo { display: block; height: 58px; width: auto; overflow: visible; filter: drop-shadow(0 0 10px rgba(255, 106, 19, 0.55)); animation: cut-heat 3.4s ease-in-out infinite; }
+.cut-groove path { stroke: #1d0a03; }
+.cut-lava path { stroke: url(#cutLava); stroke-dasharray: 1 1; stroke-dashoffset: 1; animation: cut-draw 1.1s cubic-bezier(0.4, 0.1, 0.3, 1) forwards; }
+.cut-core path { stroke: #fff4d2; stroke-opacity: 0.85; stroke-dasharray: 1 1; stroke-dashoffset: 1; animation: cut-draw 1.1s cubic-bezier(0.4, 0.1, 0.3, 1) forwards; }
+@keyframes cut-draw { to { stroke-dashoffset: 0; } }
+@keyframes cut-heat { 0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 106, 19, 0.45)); } 50% { filter: drop-shadow(0 0 16px rgba(255, 140, 40, 0.8)); } }
+@media (prefers-reduced-motion: reduce) { .cut-lava path, .cut-core path { animation: none; stroke-dashoffset: 0; } .cut-logo { animation: none; } }
+.splash-credits { position: absolute; left: 0; right: 0; bottom: 0; padding: 46px 16px max(22px, calc(12px + env(safe-area-inset-bottom, 0px))); background: linear-gradient(180deg, transparent, rgba(8, 4, 2, 0.78) 55%); display: grid; gap: 5px; justify-items: center; text-align: center; font: 600 11px/1.3 var(--label); letter-spacing: 0.14em; text-transform: uppercase; color: #d8c2a6; text-shadow: 0 1px 8px #000, 0 0 14px #000; animation: rise 0.8s 0.5s both; }
+.splash-credits b { color: var(--gold); font-weight: 700; }
+.cut-view h1 { font-size: 40px; line-height: 1.05; }
 .cut-view .day-pane { display: grid; gap: 22px; margin-top: -4px; }
-.credits { display: grid; gap: 4px; justify-items: center; margin-top: 18px; font: 600 12px/1.3 var(--label); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); text-align: center; }
+.credits { position: fixed; left: 0; right: 0; bottom: max(16px, calc(8px + env(safe-area-inset-bottom, 0px))); z-index: 2; display: grid; gap: 4px; justify-items: center; pointer-events: none; text-shadow: 0 1px 8px #000, 0 0 14px #000; font: 600 12px/1.3 var(--label); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); text-align: center; }
 .credits b { color: var(--gold); font-weight: 700; letter-spacing: 0.06em; }
 .cut-view .day-title { font-size: 21px; }
 .cut-view .chip .dn, .cut-view .mine-time { font-family: "Oswald", var(--label); font-weight: 600; letter-spacing: 0.02em; }

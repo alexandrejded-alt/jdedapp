@@ -34,10 +34,14 @@ export function Splash() {
         <div className="wordmark">
           JDED<small>APP</small>
         </div>
-        <div className="by">by @jdedcut</div>
+        <div className="by">by JDED</div>
         <div className="loadbar">
           <i />
         </div>
+      </div>
+      <div className="splash-credits">
+        <span>Co-funder &amp; developer : <b>tontiñho</b></span>
+        <span>Sound effects : <b>edenbytheway</b></span>
       </div>
     </div>
   );

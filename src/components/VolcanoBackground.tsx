@@ -178,8 +178,8 @@ export function VolcanoBackground() {
       let aL = 0;
       let aR = 0;
       for (let k = 0; k <= N; k++) {
-        aL = aL * 0.55 + (rnd() - 0.5) * 0.7 * (def.clean ? 0.22 : 1);
-        aR = aR * 0.55 + (rnd() - 0.5) * 0.7 * (def.clean ? 0.22 : 1);
+        aL = aL * 0.55 + (rnd() - 0.5) * 0.7 * (def.rough ?? (def.clean ? 0.22 : 1));
+        aR = aR * 0.55 + (rnd() - 0.5) * 0.7 * (def.rough ?? (def.clean ? 0.22 : 1));
         edgeL.push(aL);
         edgeR.push(aR);
       }
