@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CELEBRATE_EVENT } from '@/lib/celebrate';
-import { isMuted, quietFor } from '@/lib/sound';
+import { holoSound, isMuted, quietFor } from '@/lib/sound';
 
 const SRC = '/holo/resa.mp4';
 const smooth = (a: number, b: number, x: number) => {
@@ -21,6 +21,8 @@ export function HoloVideo() {
   const canvas = useRef<HTMLCanvasElement>(null);
   const raf = useRef(0);
   const timer = useRef(0);
+  const playTimer = useRef(0);
+  const phaseRef = useRef<'off' | 'in' | 'out'>('off');
 
   useEffect(() => {
     const v = video.current;
@@ -53,29 +55,42 @@ export function HoloVideo() {
       raf.current = requestAnimationFrame(paint);
     };
 
+    const show = (p: 'off' | 'in' | 'out') => {
+      phaseRef.current = p;
+      setPhase(p);
+    };
+
     const close = () => {
+      if (phaseRef.current !== 'in') return;
       window.clearTimeout(timer.current);
+      window.clearTimeout(playTimer.current);
       quietFor(0);
-      setPhase((p) => (p === 'in' ? 'out' : p));
+      holoSound('end');
+      show('out');
       timer.current = window.setTimeout(() => {
         cancelAnimationFrame(raf.current);
         v.pause();
-        setPhase('off');
-      }, 600);
+        show('off');
+      }, 800);
     };
 
     const onCelebrate = () => {
       window.clearTimeout(timer.current);
       cancelAnimationFrame(raf.current);
-      setPhase('in');
+      holoSound('start');
+      show('in');
       v.currentTime = 0;
       // Pendant l'hologramme, seul le son de la vidéo reste (sauf si le son du site est coupé) ;
       // les autres sons sont mis en pause par celebrate() → quietFor().
       v.muted = isMuted();
       v.volume = 1;
-      const go = v.play();
-      // Si le navigateur refuse le son, on joue quand même l'image.
-      if (go) go.catch(() => { v.muted = true; v.play().catch(() => {}); });
+      // La vidéo démarre quand l'hologramme a fini de se former (le petit son de départ accompagne l'apparition).
+      window.clearTimeout(playTimer.current);
+      playTimer.current = window.setTimeout(() => {
+        const go = v.play();
+        // Si le navigateur refuse le son, on joue quand même l'image.
+        if (go) go.catch(() => { v.muted = true; v.play().catch(() => {}); });
+      }, 550);
       raf.current = requestAnimationFrame(paint);
     };
 
@@ -87,6 +102,7 @@ export function HoloVideo() {
       window.removeEventListener(CELEBRATE_EVENT, onCelebrate);
       cancelAnimationFrame(raf.current);
       window.clearTimeout(timer.current);
+      window.clearTimeout(playTimer.current);
     };
   }, []);
 
@@ -101,6 +117,7 @@ export function HoloVideo() {
         <canvas ref={canvas} className="holo-canvas" />
         <div className="holo-base" />
         <div className="holo-scan" />
+        <div className="holo-edge" />
       </div>
       <video ref={video} src={SRC} className="holo-src" playsInline preload="auto" />
     </div>

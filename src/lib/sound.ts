@@ -112,6 +112,60 @@ export function fire(big = false) {
   play(`fire_${1 + Math.floor(Math.random() * 3)}` as Sfx, big ? 0.85 : 0.6, 0.95 + Math.random() * 0.1);
 }
 
+/** Petits sons holographiques synthétisés (montée à l'apparition, descente à la disparition). Ils passent même quand le reste est en silence. */
+export function holoSound(kind: 'start' | 'end') {
+  if (!ctx || !master || muted) return;
+  const c = ctx;
+  const t = c.currentTime;
+  const up = kind === 'start';
+  const dur = up ? 0.8 : 0.62;
+  const out = c.createGain();
+  out.gain.setValueAtTime(0.0001, t);
+  out.gain.exponentialRampToValueAtTime(0.5, t + 0.06);
+  out.gain.setValueAtTime(0.5, t + dur * 0.55);
+  out.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  // Léger tremblement, comme une projection instable
+  const wob = c.createGain();
+  wob.gain.value = 0.7;
+  const lfo = c.createOscillator();
+  lfo.frequency.value = 26;
+  const depth = c.createGain();
+  depth.gain.value = 0.3;
+  lfo.connect(depth).connect(wob.gain);
+  wob.connect(out).connect(master);
+  const [f0, f1] = up ? [150, 1250] : [1100, 110];
+  const tone = (type: OscillatorType, mul: number, vol: number) => {
+    const o = c.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(f0 * mul, t);
+    o.frequency.exponentialRampToValueAtTime(f1 * mul, t + dur * 0.9);
+    const g = c.createGain();
+    g.gain.value = vol;
+    o.connect(g).connect(wob);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  };
+  tone('triangle', 1, 0.5);
+  tone('sine', 2.01, 0.25);
+  // Un souffle de parasites numériques
+  const n = c.createBuffer(1, Math.ceil(c.sampleRate * dur), c.sampleRate);
+  const ch = n.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  const ns = c.createBufferSource();
+  ns.buffer = n;
+  const hp = c.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 3500;
+  const ng = c.createGain();
+  ng.gain.setValueAtTime(0.0001, t);
+  ng.gain.exponentialRampToValueAtTime(up ? 0.22 : 0.16, t + (up ? 0.12 : 0.04));
+  ng.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.8);
+  ns.connect(hp).connect(ng).connect(wob);
+  ns.start(t);
+  lfo.start(t);
+  lfo.stop(t + dur + 0.05);
+}
+
 let quietUntil = 0;
 /** Silence total (hologramme de réservation) pendant `ms` millisecondes ; 0 pour rendre le son. */
 export function quietFor(ms: number) {
