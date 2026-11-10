@@ -1,23 +1,19 @@
 /**
- * Sons de l'app (Web Audio) : clics, feux d'artifice, avion, confirmation, et deux ambiances en boucle
- * (le volcan, la radio de Showtime). Les navigateurs interdisent le son avant un premier toucher :
+ * Sons de l'app (Web Audio) : clics, feux d'artifice, confirmation, la radio de Showtime et le grondement
+ * du volcan (uniquement quand il entre en éruption). Les navigateurs interdisent le son avant un premier toucher :
  * le moteur s'active donc au premier geste de la personne, puis tout joue normalement.
  */
-export type Sfx = 'clic_1' | 'clic_2' | 'clic_3' | 'fire_1' | 'fire_2' | 'fire_3' | 'confirme' | 'avion' | 'radio';
-export type Loop = 'volcan';
-type Name = Sfx | Loop;
+export type Sfx = 'clic_1' | 'clic_2' | 'clic_3' | 'fire_1' | 'fire_2' | 'fire_3' | 'confirme' | 'radio' | 'volcan';
+type Name = Sfx;
 
 const KEY = 'jded_sound';
-const LOOP_VOLUME: Record<Loop, number> = { volcan: 0.2 };
 let pendingOnce: { name: Sfx; volume: number } | null = null;
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let muted = false;
-let wantedLoop: Loop | null = null;
 const raw = new Map<Name, Promise<ArrayBuffer | null>>();
 const bufs = new Map<Name, Promise<AudioBuffer | null>>();
-const loops = new Map<Loop, { src: AudioBufferSourceNode; gain: GainNode }>();
 const listeners = new Set<() => void>();
 
 try {
@@ -70,7 +66,6 @@ export function unlock() {
     master = ctx.createGain();
     master.gain.value = muted ? 0 : 1;
     master.connect(ctx.destination);
-    applyLoop();
   }
   if (pendingOnce) {
     const p = pendingOnce;
@@ -117,43 +112,41 @@ export function fire(big = false) {
   play(`fire_${1 + Math.floor(Math.random() * 3)}` as Sfx, big ? 0.85 : 0.6, 0.95 + Math.random() * 0.1);
 }
 
-function applyLoop() {
-  if (!ctx || !master) return;
-  const c = ctx;
-  const now = c.currentTime;
-  for (const [name, l] of loops) {
-    if (name === wantedLoop) continue;
-    l.gain.gain.cancelScheduledValues(now);
-    l.gain.gain.setTargetAtTime(0, now, 0.35);
-    window.setTimeout(() => {
-      try {
-        l.src.stop();
-      } catch {
-        /* déjà arrêté */
-      }
-    }, 1800);
-    loops.delete(name);
-  }
-  if (!wantedLoop || loops.has(wantedLoop)) return;
-  const name = wantedLoop;
-  void buffer(name).then((b) => {
-    if (!b || !ctx || !master || wantedLoop !== name || loops.has(name)) return;
-    const src = ctx.createBufferSource();
-    src.buffer = b;
-    src.loop = true;
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-    src.connect(gain).connect(master);
-    src.start();
-    gain.gain.setTargetAtTime(LOOP_VOLUME[name], ctx.currentTime, 0.5);
-    loops.set(name, { src, gain });
-  });
-}
+let eruptUntil = 0;
+let eruptNode: { src: AudioBufferSourceNode; gain: GainNode } | null = null;
 
-/** Ambiance de fond du moment (null = silence). */
-export function setLoop(name: Loop | null) {
-  wantedLoop = name;
-  applyLoop();
+/**
+ * Grondement du volcan : seulement quand il entre en éruption (réservation ou secousse).
+ * `seconds` = durée totale avant extinction ; si un grondement est déjà en cours, on ne le relance pas.
+ */
+export function eruption(volume = 0.5, seconds = 6) {
+  if (!ctx || !master || muted) return;
+  const c = ctx;
+  const m = master;
+  const nowMs = performance.now();
+  if (nowMs < eruptUntil) return;
+  eruptUntil = nowMs + seconds * 1000;
+  void buffer('volcan').then((b) => {
+    if (!b) {
+      eruptUntil = 0;
+      return;
+    }
+    const t = c.currentTime;
+    const src = c.createBufferSource();
+    src.buffer = b;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(volume, t + 0.25);
+    g.gain.setValueAtTime(volume, t + Math.max(0.3, seconds - 1.6));
+    g.gain.linearRampToValueAtTime(0, t + seconds);
+    src.connect(g).connect(m);
+    src.start(t);
+    src.stop(t + seconds + 0.1);
+    eruptNode = { src, gain: g };
+    src.onended = () => {
+      if (eruptNode?.src === src) eruptNode = null;
+    };
+  });
 }
 
 export function setSuspended(s: boolean) {

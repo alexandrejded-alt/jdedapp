@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, type ReactNo
 import { CELEBRATE_EVENT, celebrate, type CelebrateDetail } from '@/lib/celebrate';
 import { fire } from '@/lib/sound';
 import { craterPoint } from '@/lib/volcano';
-import { PlaneBanner } from './PlaneBanner';
+import { HoloVideo } from './HoloVideo';
 
 type Origin = { x: number; y: number };
 const EmberContext = createContext<(origin?: Origin, banner?: string) => void>(() => {});
@@ -35,8 +35,8 @@ export function EmberProvider({ children }: { children: ReactNode }) {
   return (
     <EmberContext.Provider value={burst}>
       {children}
+      <HoloVideo />
       <FireworksLayer />
-      <PlaneBanner />
     </EmberContext.Provider>
   );
 }
@@ -142,8 +142,10 @@ function FireworksLayer() {
         tapBurst(o);
         fountains.push({ until: clock + 0.25, carry: 0 });
       });
-      // Un seul bouquet, au centre
-      at(0.2, () => rocket({ x: c.x, y: c.y }, w / 2, h * 0.26, 0.55, true));
+      // Trois bouquets, l'un après l'autre : chaque explosion déclenche son propre son (voir explode → fire)
+      at(0.2, () => rocket({ x: c.x, y: c.y }, w / 2, h * 0.24, 0.55, true));
+      at(0.7, () => rocket({ x: c.x, y: c.y }, w * 0.27, h * 0.32, 0.55, true));
+      at(1.2, () => rocket({ x: c.x, y: c.y }, w * 0.73, h * 0.3, 0.55, true));
     }
 
     function step(dt: number) {

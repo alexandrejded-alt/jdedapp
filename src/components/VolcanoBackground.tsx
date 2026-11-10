@@ -166,7 +166,7 @@ export function VolcanoBackground() {
         pts.push([q.x, q.y]);
       }
       const D = def.speed ? total / def.speed : def.D;
-      const cycle = def.delay + D + def.hold + def.D2;
+      const cycle = def.delay + D + def.hold + def.D2 + (def.rest ?? 0);
       // Bords irréguliers (lobes) et fissures lumineuses, tirés une fois pour toutes
       let sd = 97 + i * 31;
       const rnd = () => {

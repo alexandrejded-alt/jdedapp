@@ -11,7 +11,7 @@ export const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Éruption + feux d'artifice. Ne fait rien si le système demande moins d'animations. */
-/** Avec `banner`, un avion traverse aussi l'écran avec une banderole portant ce message. */
+/** `banner` : le message de la réservation confirmée (sert à ne célébrer que les vraies réservations). */
 export function celebrate(origin: CelebrateDetail): void {
   if (prefersReducedMotion()) return;
   window.dispatchEvent(new CustomEvent<CelebrateDetail>(CELEBRATE_EVENT, { detail: origin }));

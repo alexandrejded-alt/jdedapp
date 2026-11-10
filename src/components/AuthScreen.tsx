@@ -110,6 +110,10 @@ export function AuthScreen({ initialError }: { initialError?: string }) {
             </button>
           </div>
         </div>
+        <div className="credits">
+          <span>Co-funder &amp; developer : <b>tontiñho</b></span>
+          <span>Sound effects : <b>edenbytheway</b></span>
+        </div>
       </section>
     );
   }

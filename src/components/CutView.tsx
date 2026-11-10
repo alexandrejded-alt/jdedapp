@@ -91,7 +91,7 @@ export function CutView({ userId, guestName, avatarPath }: { userId: string; gue
     <section className="cut-view">
       <div className="view-head">
         <div className="eyebrow">Réserver</div>
-        <h1>Cut</h1>
+        <h1 className="cut-word">Cut</h1>
         <p>Choisis ton jour, puis ton heure.</p>
       </div>
 
@@ -145,7 +145,7 @@ export function CutView({ userId, guestName, avatarPath }: { userId: string; gue
                 );
               })}
             </div>
-            <div key={activeDay} className={dayDir ? `pane-${dayDir}` : undefined}>
+            <div key={activeDay} className={`day-pane${dayDir ? ` pane-${dayDir}` : ''}`}>
               <div className="day-title">{dayLong(activeDay)}</div>
               <div className="times">
                 {(byDay.get(activeDay) ?? []).map((s) => (

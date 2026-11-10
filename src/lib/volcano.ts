@@ -45,6 +45,8 @@ export type FlowDef = {
   dim?: number;
   /** Bords lisses et peu de fissures (pour que les lettres restent lisibles). */
   clean?: boolean;
+  /** Pause (en secondes) une fois éteinte, avant de recommencer : garde les coulées éphémères en phase avec les lettres. */
+  rest?: number;
 };
 /** Décale tous les points (paires x y) d'un tracé écrit avec des coordonnées absolues. */
 const shift = (d: string, dx: number, dy: number): string => {
@@ -58,23 +60,55 @@ const approach = (tx: number, ty: number): string => {
   return `M${sx.toFixed(1)} 96 C${(sx + (tx - sx) * 0.15).toFixed(1)} ${(96 + (ty - 96) * 0.4).toFixed(1)} ${tx} ${(ty - (ty - 96) * 0.4).toFixed(1)} ${tx} ${ty}`;
 };
 
-/** « JDED » : chaque lettre est un trait continu de 19 de haut (y de 2,5 à 21,5), tracé par une coulée. */
-export const LETTER_Y0 = 170;
+/**
+ * « JDED » sur une première ligne, « CUT » en dessous : chaque lettre est un trait de 19 de haut
+ * (y de 2,5 à 21,5), tracé par une coulée de lave qui part du cratère.
+ */
+const LINE1_Y0 = 150;
+const LINE2_Y0 = 177;
+/** Couloir entre les deux lignes, où la lave file vers les lettres de CUT. */
+const CHANNEL = 175.5;
 const LX = { J: 163.75, D1: 186.25, E: 210.75, D2: 232.75 };
+const CX = { C: 176.75, U: 198.75, T: 220.75 };
 const letterFlow = (x: number, startX: number, start: string, rest: string): string => {
   const tx = x + startX;
-  return approach(tx, LETTER_Y0 + (start === 'top' ? 2.5 : -0.5)) + ' ' + shift(rest, x, LETTER_Y0);
+  return approach(tx, LINE1_Y0 + (start === 'top' ? 2.5 : -0.5)) + ' ' + shift(rest, x, LINE1_Y0);
 };
 const J = letterFlow(LX.J, 12.4, 'top', 'L12.4 16.6 C12.4 19.6 11.4 21.8 8.8 21.8 C6.4 21.8 3.6 20.6 3.2 17');
 const D = (x: number) => letterFlow(x, 2.5, 'top', 'L2.5 19.5 Q2.5 21.5 4.5 21.5 L8 21.5 C14.5 21.5 15.5 17 15.5 12 C15.5 7 14.5 2.5 8 2.5 L4.5 2.5');
 const E = letterFlow(LX.E, 14, 'above', 'Q14 2.5 11 2.5 L4.5 2.5 Q2.5 2.5 2.5 4.5 L2.5 19.5 Q2.5 21.5 4.5 21.5 L14 21.5');
-const E_MID = shift('M2.5 12 L11.5 12', LX.E, LETTER_Y0);
+const E_MID = shift('M2.5 12 L11.5 12', LX.E, LINE1_Y0);
+
+/**
+ * Les lettres de CUT : la lave descend le long d'un flanc (gauche ou droite) pour ne pas croiser JDED,
+ * puis arrive soit par le côté (C), soit par le couloir entre les deux lignes (U et T).
+ */
+const SIDE_L = 158;
+const SIDE_R = 259;
+const routeLeft = (endX: number, endY: number, mode: 'side' | 'drop'): string => {
+  const head = `M200 97 C186 110 ${SIDE_L + 2} 124 ${SIDE_L} 146`;
+  return mode === 'side'
+    ? `${head} L${SIDE_L} ${endY - 3} Q${SIDE_L} ${endY} ${SIDE_L + 3} ${endY} L${endX} ${endY}`
+    : `${head} L${SIDE_L} ${CHANNEL - 3.5} Q${SIDE_L} ${CHANNEL} ${SIDE_L + 4} ${CHANNEL} L${endX - 4} ${CHANNEL} Q${endX} ${CHANNEL} ${endX} ${endY}`;
+};
+const routeRight = (endX: number, endY: number): string =>
+  `M214 97 C228 110 ${SIDE_R - 2} 124 ${SIDE_R} 146 L${SIDE_R} ${CHANNEL - 3.5} Q${SIDE_R} ${CHANNEL} ${SIDE_R - 4} ${CHANNEL} L${endX + 4} ${CHANNEL} Q${endX} ${CHANNEL} ${endX} ${endY}`;
+// La lave de chaque route s'efface vite derrière son front : seules les lettres restent allumées.
+const R_C = routeLeft(CX.C + 2.5, LINE2_Y0 + 12, 'side');
+const R_U = routeLeft(CX.U + 2.5, LINE2_Y0 + 2.5, 'drop');
+const R_T = routeRight(CX.T + 8, LINE2_Y0 + 2.5);
+const C_TOP = `M${CX.C + 2.5} ${LINE2_Y0 + 12} ` + shift('C2.5 7 4 2.5 8.5 2.5 L11.5 2.5 Q14.5 2.5 14.5 5.5', CX.C, LINE2_Y0);
+const C_BOT = shift('M2.5 12 C2.5 17 4 21.5 8.5 21.5 L11.5 21.5 Q14.5 21.5 14.5 18.5', CX.C, LINE2_Y0);
+const U = `M${CX.U + 2.5} ${LINE2_Y0 + 2.5} ` + shift('L2.5 15.5 C2.5 19.5 5 21.5 9 21.5 C13 21.5 15.5 19.5 15.5 15.5 L15.5 2.5', CX.U, LINE2_Y0);
+const T = `M${CX.T + 8} ${LINE2_Y0 + 2.5} ` + shift('L8 21.5', CX.T, LINE2_Y0);
+const T_BAR_L = shift('M8 2.5 L1.5 2.5', CX.T, LINE2_Y0);
+const T_BAR_R = shift('M8 2.5 L14.5 2.5', CX.T, LINE2_Y0);
 
 /**
  * Lettres JDED en traits fixes (utilisées par l'animation « voyage » : VolcanoJourney).
- * Le fond animé, lui, les dessine avec des coulées de lave (voir FLOWS).
+ * Le fond animé, lui, les dessine avec des coulées de lave (voir FLOWS). Elles gardent leur place d'origine.
  */
-export const LETTERS_Y0 = LETTER_Y0;
+export const LETTERS_Y0 = 170;
 export const LETTERS: { d: string; x: number }[] = [
   { d: 'M3.2 17 C3.6 20.6 6.4 21.8 8.8 21.8 C11.4 21.8 12.4 19.6 12.4 16.6 L12.4 2.5', x: LX.J },
   { d: 'M2.5 2.5 L2.5 21.5 L8 21.5 C14.5 21.5 15.5 17 15.5 12 C15.5 7 14.5 2.5 8 2.5 L2.5 2.5', x: LX.D1 },
@@ -84,13 +118,26 @@ export const LETTERS: { d: string; x: number }[] = [
 
 // Les coulées de lettres sont fines et un peu plus sombres (dim) : le nom se devine, il ne crie pas.
 const LET = { w: 1.55, hold: 130, D2: 40, start: 0, speed: 30, lin: true, dim: 0.8, clean: true };
+// CUT a un plus long chemin à faire (le flanc, puis le couloir) : la lave y court un peu plus vite.
+const LET2 = { ...LET, speed: 46 };
 export const FLOWS: FlowDef[] = [
   { d: J, delay: 0, D: 0, ...LET },
   { d: D(LX.D1), delay: 1.1, D: 0, ...LET },
   { d: E, delay: 2.2, D: 0, ...LET },
   // La barre du milieu du E : une branche qui part du montant, une fois la coulée passée
-  { d: E_MID, delay: 6, D: 0, ...LET, speed: 12, hold: 127 },
+  { d: E_MID, delay: 4.9, D: 0, ...LET, speed: 12, hold: 128 },
   { d: D(LX.D2), delay: 3.3, D: 0, ...LET },
+  // CUT, juste après : la lave file le long d'un flanc (route qui s'efface), puis trace la lettre
+  // C (le bas se détache du milieu), U, T (sa barre jaillit du haut du pied)
+  { d: R_C, delay: 2.6, D: 0, ...LET2, hold: 1.2, D2: 3, rest: 163 },
+  { d: C_TOP, delay: 5.4, D: 0, ...LET2, hold: 127.6 },
+  { d: C_BOT, delay: 5.4, D: 0, ...LET, speed: 30, hold: 127.6 },
+  { d: R_U, delay: 3.4, D: 0, ...LET2, hold: 1.2, D2: 3, rest: 163 },
+  { d: U, delay: 6.45, D: 0, ...LET2, hold: 126.5 },
+  { d: R_T, delay: 4.2, D: 0, ...LET2, hold: 1.2, D2: 3, rest: 163 },
+  { d: T, delay: 7.0, D: 0, ...LET2, hold: 126 },
+  { d: T_BAR_L, delay: 7.0, D: 0, ...LET, speed: 14, hold: 126 },
+  { d: T_BAR_R, delay: 7.0, D: 0, ...LET, speed: 14, hold: 126 },
   // Deux grandes coulées sur les flancs, loin des lettres
   { d: 'M198 98 C186 112 168 124 152 142 C140 156 130 176 124 202', w: 2.2, delay: 3, D: 14, hold: 40, D2: 30, start: 0, dim: 0.85 },
   { d: 'M224 98 C238 112 250 126 258 142 C268 160 276 178 282 202', w: 2.0, delay: 5, D: 14, hold: 40, D2: 30, start: 0, dim: 0.85 },
