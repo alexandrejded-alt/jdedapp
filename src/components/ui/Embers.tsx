@@ -114,7 +114,7 @@ function FireworksLayer() {
       const kinds = ['peony', 'willow', 'ring', 'crackle'] as const;
       const kind = big ? 'willow' : kinds[Math.floor(Math.random() * kinds.length)];
       const k = Math.min(w, 560) / 400;
-      const n = kind === 'ring' ? 40 : kind === 'willow' ? (big ? 64 : 36) : 44;
+      const n = kind === 'ring' ? 40 : kind === 'willow' ? (big ? 40 : 30) : 44;
       for (let i = 0; i < n; i++) {
         const a = kind === 'ring' ? (i / n) * Math.PI * 2 : rand(0, Math.PI * 2);
         const sp = (kind === 'ring' ? 190 : kind === 'willow' ? rand(90, 250) : rand(50, 270)) * k * (big ? 1.3 : 1);
@@ -140,11 +140,10 @@ function FireworksLayer() {
       const at = (s: number, run: () => void) => jobs.push({ at: clock + s, run });
       at(0, () => {
         tapBurst(o);
-        fountains.push({ until: clock + 0.45, carry: 0 });
+        fountains.push({ until: clock + 0.25, carry: 0 });
       });
-      // Peu de feux : une fusée, puis le bouquet final
-      at(0.2, () => rocket({ x: c.x + rand(-30, 30), y: c.y }, w * rand(0.25, 0.75), h * rand(0.16, 0.36), 0.5));
-      at(0.7, () => rocket({ x: c.x, y: c.y }, w / 2, h * 0.24, 0.6, true));
+      // Un seul bouquet, au centre
+      at(0.2, () => rocket({ x: c.x, y: c.y }, w / 2, h * 0.26, 0.55, true));
     }
 
     function step(dt: number) {

@@ -446,18 +446,19 @@ function splash(g: CanvasRenderingContext2D, age: number) {
 function fireworks(g: CanvasRenderingContext2D, age: number) {
   if (age < 0) return;
   const colors = ['#ffe3a0', '#9ceaff', '#ffa26a', '#ffcc4c'];
-  for (let n = 0; n < 7; n++) {
-    const a = age - n * .34;
-    if (a < 0 || a > 2.1) continue;
+  // Peu de feux : deux bouquets seulement, courts (avant : 7 bouquets pendant plus de 3 s)
+  for (let n = 0; n < 2; n++) {
+    const a = age - n * .4;
+    if (a < 0 || a > 1.5) continue;
     const bx = (noise(n + 60) - .5) * 560, by = -210 - noise(n + 70) * 180;
     if (a < .5) {
       const p = a / .5;
       line(g, [[110 + (bx - 110) * Math.max(0, p - .12), 95 + (by - 95) * Math.max(0, p - .12)], [110 + (bx - 110) * p, 95 + (by - 95) * p]], '#ffe5b3', 2);
     } else {
       const p = a - .5;
-      g.save(); g.globalAlpha *= 1 - clamp(p / 1.6); g.shadowColor = colors[n % 4]; g.shadowBlur = 7;
-      for (let i = 0; i < 44; i++) {
-        const angle = i / 44 * TAU, velocity = 70 + noise(i + n * 44) * 100;
+      g.save(); g.globalAlpha *= 1 - clamp(p / 1); g.shadowColor = colors[n % 4]; g.shadowBlur = 7;
+      for (let i = 0; i < 24; i++) {
+        const angle = i / 24 * TAU, velocity = 70 + noise(i + n * 44) * 100;
         const r = velocity * p;
         const x = bx + Math.cos(angle) * r, y = by + Math.sin(angle) * r + p * p * 48;
         line(g, [[x - Math.cos(angle) * 8, y - Math.sin(angle) * 8 - 3], [x, y]], colors[(n + i) % 4], 1.8);
