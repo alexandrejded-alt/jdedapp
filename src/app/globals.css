@@ -487,3 +487,8 @@ html[data-stage="admin"] .brand { font-family: var(--body); font-weight: 700; fo
 .row-edit:hover { color: var(--gold); background: rgba(255, 255, 255, 0.06); }
 .row-edit svg { width: 15px; height: 15px; }
 .rename-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+.sound-btn { flex: none; display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: rgba(21, 16, 11, 0.7); color: var(--ink-dim); padding: 0; }
+.sound-btn svg { width: 19px; height: 19px; }
+.sound-btn[aria-pressed="true"] { color: var(--gold); border-color: rgba(244, 189, 79, 0.45); }
+.idrow .sound-btn { margin-left: auto; margin-right: -6px; }

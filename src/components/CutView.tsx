@@ -7,6 +7,7 @@ import { dateParis, dayLong, dayParts, timeParis } from '@/lib/time';
 import type { Slot } from '@/lib/types';
 import { useAvatarUrls } from '@/lib/useAvatarUrls';
 import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
+import { play } from '@/lib/sound';
 import { FlameIcon } from './ui/Icons';
 import { useSlideDir } from '@/lib/useSlideDir';
 import { ConfirmButton } from './ui/ConfirmButton';
@@ -72,6 +73,7 @@ export function CutView({ userId, guestName, avatarPath }: { userId: string; gue
       window.dispatchEvent(new CustomEvent(VOLCANO_JOURNEY_EVENT, {
         detail: { name: guestName, avatarUrl: avatarPath ? avatarUrls[avatarPath] : null },
       }));
+      play('confirme', 0.8);
       toast('C\'est réservé !');
     }
     await load();

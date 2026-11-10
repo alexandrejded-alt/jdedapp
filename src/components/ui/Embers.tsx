@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { CELEBRATE_EVENT, celebrate, type CelebrateDetail } from '@/lib/celebrate';
+import { fire } from '@/lib/sound';
 import { craterPoint } from '@/lib/volcano';
 import { PlaneBanner } from './PlaneBanner';
 
@@ -106,6 +107,7 @@ function FireworksLayer() {
     /** Explosion d'un feu d'artifice. */
     function explode(x: number, y: number, big = false) {
       flash = Math.min(1, flash + (big ? 0.55 : 0.3));
+      fire(big);
       const pal = PALETTES[Math.floor(Math.random() * PALETTES.length)];
       const kinds = ['peony', 'willow', 'ring', 'crackle'] as const;
       const kind = big ? 'willow' : kinds[Math.floor(Math.random() * kinds.length)];

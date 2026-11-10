@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { play } from '@/lib/sound';
 import { CELEBRATE_EVENT, type CelebrateDetail } from '@/lib/celebrate';
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
@@ -109,6 +110,7 @@ export function PlaneBanner() {
     function start(text: string) {
       if (!canvas || !ctx) return;
       running = true;
+      play('avion', 0.5);
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = window.innerWidth;
       const h = window.innerHeight;

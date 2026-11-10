@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { LogoutButton } from '@/components/LogoutButton';
+import { SoundToggle } from '@/components/SoundToggle';
 import { TabBar } from '@/components/TabBar';
 import { TopBand } from '@/components/TopBand';
 import { EmberOnMount } from '@/components/ui/EmberOnMount';
@@ -31,7 +32,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <div className="shell">
       <TopBand
         hello={isAdmin ? 'Espace admin' : `Salut ${profile.first_name}`}
-        action={<LogoutButton />}
+        action={
+          <>
+            <SoundToggle />
+            <LogoutButton />
+          </>
+        }
         user={{
           userId: user.id,
           name: `${profile.first_name} ${profile.last_name}`.trim(),

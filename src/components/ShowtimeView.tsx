@@ -9,6 +9,7 @@ import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { FlameIcon, Icon } from './ui/Icons';
 import { ConfirmButton } from './ui/ConfirmButton';
 import { ConfirmSheet } from './ui/Sheets';
+import { play } from '@/lib/sound';
 import { useEmbers } from './ui/Embers';
 import { useToast } from './ui/Toast';
 
@@ -50,6 +51,7 @@ export function ShowtimeView({ userId }: { userId: string }) {
     const { error } = await supabase.rpc('reserve_event_seat', { p_event_id: ev.id });
     if (error) toast(friendlyError(error), true);
     else {
+      play('confirme', 0.8);
       burst(undefined, 'Bravo pour ta réservation');
       toast('Ta place est réservée.');
     }

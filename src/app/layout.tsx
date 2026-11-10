@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
+import { SoundEngine } from '@/components/SoundEngine';
 import { ShakeEruption } from '@/components/ShakeEruption';
 import { Splash } from '@/components/Splash';
 import { TvStage } from '@/components/TvStage';
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ToastProvider>
           <EmberProvider>{children}</EmberProvider>
         </ToastProvider>
+        <SoundEngine />
         <ShakeEruption />
         <Splash />
       </body>
