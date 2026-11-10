@@ -80,7 +80,7 @@ export function isUnlocked() {
 }
 
 export function play(name: Sfx, volume = 1, rate = 1) {
-  if (!ctx || !master || muted) return;
+  if (!ctx || !master || muted || isQuiet()) return;
   const c = ctx;
   const m = master;
   void buffer(name).then((b) => {
@@ -112,6 +112,22 @@ export function fire(big = false) {
   play(`fire_${1 + Math.floor(Math.random() * 3)}` as Sfx, big ? 0.85 : 0.6, 0.95 + Math.random() * 0.1);
 }
 
+let quietUntil = 0;
+/** Silence total (hologramme de réservation) pendant `ms` millisecondes ; 0 pour rendre le son. */
+export function quietFor(ms: number) {
+  quietUntil = ms > 0 ? performance.now() + ms : 0;
+  if (ms > 0 && eruptNode) {
+    try {
+      eruptNode.src.stop();
+    } catch {
+      /* déjà arrêté */
+    }
+    eruptNode = null;
+    eruptUntil = 0;
+  }
+}
+export const isQuiet = () => performance.now() < quietUntil;
+
 let eruptUntil = 0;
 let eruptNode: { src: AudioBufferSourceNode; gain: GainNode } | null = null;
 
@@ -120,7 +136,7 @@ let eruptNode: { src: AudioBufferSourceNode; gain: GainNode } | null = null;
  * `seconds` = durée totale avant extinction ; si un grondement est déjà en cours, on ne le relance pas.
  */
 export function eruption(volume = 0.5, seconds = 6) {
-  if (!ctx || !master || muted) return;
+  if (!ctx || !master || muted || isQuiet()) return;
   const c = ctx;
   const m = master;
   const nowMs = performance.now();

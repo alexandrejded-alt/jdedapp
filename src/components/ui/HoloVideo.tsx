@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CELEBRATE_EVENT } from '@/lib/celebrate';
-import { isMuted } from '@/lib/sound';
+import { quietFor } from '@/lib/sound';
 
 const SRC = '/holo/resa.mp4';
 const smooth = (a: number, b: number, x: number) => {
@@ -55,6 +55,7 @@ export function HoloVideo() {
 
     const close = () => {
       window.clearTimeout(timer.current);
+      quietFor(0);
       setPhase((p) => (p === 'in' ? 'out' : p));
       timer.current = window.setTimeout(() => {
         cancelAnimationFrame(raf.current);
@@ -68,11 +69,9 @@ export function HoloVideo() {
       cancelAnimationFrame(raf.current);
       setPhase('in');
       v.currentTime = 0;
-      v.muted = isMuted();
-      v.volume = 0.9;
-      const go = v.play();
-      // Si le navigateur refuse le son, on joue quand même l'image.
-      if (go) go.catch(() => { v.muted = true; v.play().catch(() => {}); });
+      // Aucun son pendant l'hologramme : ni la vidéo, ni les feux d'artifice, ni le volcan.
+      v.muted = true;
+      v.play().catch(() => {});
       raf.current = requestAnimationFrame(paint);
     };
 

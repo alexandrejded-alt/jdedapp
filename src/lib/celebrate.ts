@@ -1,3 +1,5 @@
+import { quietFor } from './sound';
+
 /** Message envoyé au volcan et aux feux d'artifice quand quelque chose est validé. */
 export const CELEBRATE_EVENT = 'jded:celebrate';
 /** Changement de page : le volcan laisse couler un peu plus de lave. */
@@ -14,6 +16,8 @@ export const prefersReducedMotion = () =>
 /** `banner` : le message de la réservation confirmée (sert à ne célébrer que les vraies réservations). */
 export function celebrate(origin: CelebrateDetail): void {
   if (prefersReducedMotion()) return;
+  // Pendant l'hologramme, plus aucun son (la vidéo non plus) : voir HoloVideo.
+  quietFor(9500);
   window.dispatchEvent(new CustomEvent<CelebrateDetail>(CELEBRATE_EVENT, { detail: origin }));
   try {
     navigator.vibrate?.([24, 40, 24]);

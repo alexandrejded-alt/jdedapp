@@ -51,8 +51,9 @@ export function ShowtimeView({ userId }: { userId: string }) {
     const { error } = await supabase.rpc('reserve_event_seat', { p_event_id: ev.id });
     if (error) toast(friendlyError(error), true);
     else {
-      play('confirme', 0.8);
+      // L'hologramme prend le dessus : le « burst » coupe les sons, donc il passe avant le son de confirmation.
       burst(undefined, 'Bravo pour ta réservation');
+      play('confirme', 0.8);
       toast('Ta place est réservée.');
     }
     await load();
