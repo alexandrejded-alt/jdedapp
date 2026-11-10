@@ -7,7 +7,7 @@ import { craterPoint } from '@/lib/volcano';
 import { HoloVideo } from './HoloVideo';
 
 type Origin = { x: number; y: number };
-const EmberContext = createContext<(origin?: Origin, banner?: string) => void>(() => {});
+const EmberContext = createContext<(origin?: Origin, banner?: string, opts?: { holo?: boolean }) => void>(() => {});
 
 /**
  * Célébration : quand quelque chose est validé (coupe, place, compte...),
@@ -25,11 +25,11 @@ export function EmberProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('pointerdown', onDown, true);
   }, []);
 
-  const burst = useCallback((origin?: Origin, banner?: string) => {
+  const burst = useCallback((origin?: Origin, banner?: string, opts?: { holo?: boolean }) => {
     // Les feux d'artifice (et l'éruption) ne sont réservés qu'à une réservation confirmée.
     if (!banner) return;
     const at = origin ?? last.current ?? { x: window.innerWidth / 2, y: window.innerHeight * 0.45 };
-    celebrate({ ...at, banner });
+    celebrate({ ...at, banner, holo: opts?.holo });
   }, []);
 
   return (

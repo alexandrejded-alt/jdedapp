@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { CELEBRATE_EVENT } from '@/lib/celebrate';
+import { CELEBRATE_EVENT, type CelebrateDetail } from '@/lib/celebrate';
 import { holoSound, isMuted, quietFor } from '@/lib/sound';
 
 const SRC = '/holo/resa.mp4';
@@ -11,7 +11,7 @@ const smooth = (a: number, b: number, x: number) => {
 };
 
 /**
- * Hologramme de réservation : quand une place est confirmée, la vidéo de JDED apparaît au centre,
+ * Hologramme de réservation Showtime : quand une place est confirmée, la vidéo de JDED apparaît au centre,
  * détourée en direct (le noir devient transparent, image par image) pour flotter directement sur le site.
  * Un toucher la ferme ; sinon elle disparaît toute seule à la fin.
  */
@@ -74,7 +74,9 @@ export function HoloVideo() {
       }, 800);
     };
 
-    const onCelebrate = () => {
+    const onCelebrate = (e: Event) => {
+      // Seulement pour une réservation Showtime (les coupes gardent leur propre animation).
+      if (!(e as CustomEvent<CelebrateDetail>).detail?.holo) return;
       window.clearTimeout(timer.current);
       cancelAnimationFrame(raf.current);
       holoSound('start');
