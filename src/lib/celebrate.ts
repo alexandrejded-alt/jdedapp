@@ -2,6 +2,9 @@
 export const CELEBRATE_EVENT = 'jded:celebrate';
 /** Changement de page : le volcan laisse couler un peu plus de lave. */
 export const NAVIGATE_EVENT = 'jded:navigate';
+/** Secousse du téléphone : petite éruption proportionnelle à la force (power de 0 à 1). */
+export const SHAKE_EVENT = 'jded:shake';
+export type ShakeDetail = { power: number };
 export type CelebrateDetail = { x: number; y: number; banner?: string };
 
 export const prefersReducedMotion = () =>

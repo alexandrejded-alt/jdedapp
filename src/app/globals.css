@@ -412,13 +412,31 @@ html[data-stage="tv"] .tv-studio { opacity: 1; visibility: visible; transition: 
 @keyframes tv-roll { to { top: 112%; } }
 .tv-vignette { position: absolute; inset: 0; background: radial-gradient(130% 100% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.7) 100%); }
 
-/* zap de vieille télé à l'entrée et à la sortie du plateau */
-.tv-zap { position: fixed; inset: 0; z-index: 96; pointer-events: none; opacity: 0; }
-.tv-zap::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 100%; margin-top: -50%; background: radial-gradient(80% 60% at 50% 50%, #fff4e0, #ffb55a 40%, #ff6a13 75%, #1a0a03); transform: scaleY(0.004); }
-.tv-zap.go { animation: tv-zap-fade 0.62s ease-out both; }
-.tv-zap.go::before { animation: tv-zap-open 0.62s cubic-bezier(0.7, 0, 0.2, 1) both; }
-@keyframes tv-zap-fade { 0% { opacity: 0; } 10% { opacity: 1; } 60% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes tv-zap-open { 0% { transform: scaleX(0.05) scaleY(0.004); } 28% { transform: scaleX(1) scaleY(0.006); } 62% { transform: scaleX(1) scaleY(0.5); } 100% { transform: scaleX(1) scaleY(1); } }
+/* zap de vieille télé : uniquement à l'entrée sur le plateau Showtime */
+.tv-zap { position: fixed; inset: 0; z-index: 96; pointer-events: none; opacity: 0; overflow: hidden; }
+.tv-zap i { position: absolute; inset: 0; display: block; opacity: 0; }
+.tv-zap.go { opacity: 1; animation: z-all 0.95s linear both; }
+.tv-zap .z-dark { background: #050302; }
+.tv-zap.go .z-dark { animation: z-dark 0.95s linear both; }
+/* la ligne blanche s'étire puis la télé « s'allume » */
+.tv-zap .z-line { top: 50%; bottom: auto; height: 3px; margin-top: -1.5px; background: #fff; box-shadow: 0 0 14px 3px #ffd9a0, 0 0 40px 10px #ff7a1a, -3px 0 0 rgba(255, 40, 20, 0.8), 3px 0 0 rgba(40, 140, 255, 0.7); transform-origin: 50% 50%; }
+.tv-zap.go .z-line { animation: z-line 0.95s cubic-bezier(0.7, 0, 0.3, 1) both; }
+.tv-zap .z-open { background: radial-gradient(90% 70% at 50% 50%, #fff6e6 0%, #ffc276 35%, #ff6a13 70%, #3a1405 100%); transform-origin: 50% 50%; }
+.tv-zap.go .z-open { animation: z-open 0.95s cubic-bezier(0.6, 0, 0.2, 1) both; }
+/* barres de réglage + neige électronique */
+.tv-zap .z-bars { background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0 2px, rgba(0, 0, 0, 0.5) 2px 5px), linear-gradient(90deg, rgba(255, 40, 20, 0.35), transparent 30%, transparent 70%, rgba(40, 140, 255, 0.3)); mix-blend-mode: overlay; }
+.tv-zap.go .z-bars { animation: z-bars 0.95s steps(8, jump-none) both; }
+.tv-zap .z-noise { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 0.75  0 0 0 0 0.45  0 0 0 1.4 -0.35'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); background-size: 160px 160px; mix-blend-mode: screen; }
+.tv-zap.go .z-noise { animation: z-noise 0.95s steps(6, jump-none) both; }
+.tv-zap b { position: absolute; top: max(18px, env(safe-area-inset-top)); right: 18px; font: 700 26px/1 var(--label); letter-spacing: 0.12em; color: var(--gold); text-shadow: 0 0 10px #ff6a13, 2px 0 0 rgba(255, 40, 20, 0.7); opacity: 0; }
+.tv-zap.go b { animation: z-ch 0.95s steps(1, end) both; }
+@keyframes z-all { 0%, 82% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes z-dark { 0% { opacity: 1; } 55% { opacity: 1; } 70% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes z-line { 0% { opacity: 0; transform: scaleX(0); } 12% { opacity: 1; transform: scaleX(0.2); } 32% { opacity: 1; transform: scaleX(1); height: 3px; } 46% { opacity: 1; transform: scaleX(1); height: 3px; } 58% { opacity: 0; transform: scaleX(1) scaleY(30); } 100% { opacity: 0; } }
+@keyframes z-open { 0%, 40% { opacity: 0; transform: scaleY(0.01); } 52% { opacity: 1; transform: scaleY(0.2); } 66% { opacity: 1; transform: scaleY(1); } 100% { opacity: 0; transform: scaleY(1); } }
+@keyframes z-bars { 0%, 50% { opacity: 0; transform: translateY(0); } 58% { opacity: 0.9; transform: translateY(-6%); } 72% { opacity: 0.7; transform: translateY(5%); } 100% { opacity: 0; transform: translateY(0); } }
+@keyframes z-noise { 0%, 48% { opacity: 0; background-position: 0 0; } 58% { opacity: 0.75; background-position: 40px 70px; } 75% { opacity: 0.5; background-position: -60px 30px; } 100% { opacity: 0; background-position: 20px -40px; } }
+@keyframes z-ch { 0%, 56% { opacity: 0; } 57%, 92% { opacity: 1; } 100% { opacity: 0; } }
 
 /* en-tête du plateau */
 .tv-head { position: relative; }
@@ -440,3 +458,5 @@ html[data-stage="tv"] .tv-studio { opacity: 1; visibility: visible; transition: 
 .ev .stub .ch { font: 700 10px/1 var(--label); letter-spacing: 0.22em; color: var(--on-flame); background: var(--gold); padding: 3px 5px 2px 7px; border-radius: 3px; margin-bottom: 6px; box-shadow: 0 0 10px rgba(244, 189, 79, 0.5); }
 .ev .stub .dn { text-shadow: 0 0 14px rgba(255, 106, 19, 0.8); }
 html[data-stage="tv"] .tabbar { border-top-color: rgba(244, 189, 79, 0.4); box-shadow: 0 -10px 30px rgba(255, 106, 19, 0.12); }
+
+.shake-ask { position: fixed; left: 14px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 40; padding: 9px 14px; border-radius: 999px; border: 1px solid rgba(244, 189, 79, 0.5); background: rgba(21, 16, 11, 0.9); color: var(--gold); font: 700 12px/1 var(--label); letter-spacing: 0.14em; text-transform: uppercase; box-shadow: 0 0 18px rgba(255, 106, 19, 0.25); }

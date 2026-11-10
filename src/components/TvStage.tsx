@@ -26,7 +26,8 @@ export function TvStage() {
       first.current = false;
       return;
     }
-    if (on === was) return;
+    // Le zap n'est joué qu'à l'entrée sur le plateau, pas à la sortie.
+    if (!on || was) return;
     const el = zap.current;
     if (!el) return;
     el.classList.remove('go');
@@ -47,7 +48,14 @@ export function TvStage() {
         <div className="tv-scan" />
         <div className="tv-vignette" />
       </div>
-      <div className="tv-zap" ref={zap} aria-hidden="true" />
+      <div className="tv-zap" ref={zap} aria-hidden="true">
+        <i className="z-dark" />
+        <i className="z-line" />
+        <i className="z-open" />
+        <i className="z-bars" />
+        <i className="z-noise" />
+        <b>CH 01</b>
+      </div>
     </>
   );
 }

@@ -83,17 +83,17 @@ export const LETTERS: { d: string; x: number }[] = [
 ];
 
 // Les coulées de lettres sont fines et un peu plus sombres (dim) : le nom se devine, il ne crie pas.
-const LET = { w: 1.55, hold: 130, D2: 40, start: 0, speed: 8, lin: true, dim: 0.78, clean: true };
+const LET = { w: 1.55, hold: 130, D2: 40, start: 0, speed: 30, lin: true, dim: 0.8, clean: true };
 export const FLOWS: FlowDef[] = [
   { d: J, delay: 0, D: 0, ...LET },
-  { d: D(LX.D1), delay: 2, D: 0, ...LET },
-  { d: E, delay: 4, D: 0, ...LET },
+  { d: D(LX.D1), delay: 1.1, D: 0, ...LET },
+  { d: E, delay: 2.2, D: 0, ...LET },
   // La barre du milieu du E : une branche qui part du montant, une fois la coulée passée
-  { d: E_MID, delay: 17, D: 0, ...LET, speed: 4, hold: 117 },
-  { d: D(LX.D2), delay: 6, D: 0, ...LET },
+  { d: E_MID, delay: 6, D: 0, ...LET, speed: 12, hold: 127 },
+  { d: D(LX.D2), delay: 3.3, D: 0, ...LET },
   // Deux grandes coulées sur les flancs, loin des lettres
-  { d: 'M198 98 C186 112 168 124 152 142 C140 156 130 176 124 202', w: 2.2, delay: 6, D: 40, hold: 40, D2: 30, start: 0, dim: 0.85 },
-  { d: 'M224 98 C238 112 250 126 258 142 C268 160 276 178 282 202', w: 2.0, delay: 12, D: 40, hold: 40, D2: 30, start: 0, dim: 0.85 },
+  { d: 'M198 98 C186 112 168 124 152 142 C140 156 130 176 124 202', w: 2.2, delay: 3, D: 14, hold: 40, D2: 30, start: 0, dim: 0.85 },
+  { d: 'M224 98 C238 112 250 126 258 142 C268 160 276 178 282 202', w: 2.0, delay: 5, D: 14, hold: 40, D2: 30, start: 0, dim: 0.85 },
 ];
 
 /** Ravines et arêtes dessinées sur le cône (relief). */

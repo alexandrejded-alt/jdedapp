@@ -2,12 +2,14 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
-import { CELEBRATE_EVENT, NAVIGATE_EVENT, prefersReducedMotion } from '@/lib/celebrate';
+import { CELEBRATE_EVENT, NAVIGATE_EVENT, SHAKE_EVENT, prefersReducedMotion, type ShakeDetail } from '@/lib/celebrate';
 import { BACK, FLOWS, MAIN, POOL, RIDGES, craterPoint, volcanoFrame, type Pt } from '@/lib/volcano';
 
 type Ember = { x: number; y: number; vx: number; vy: number; age: number; max: number; size: number; ph: number; hot: number };
 type Smoke = { x: number; y: number; vx: number; vy: number; age: number; max: number; r0: number; r1: number };
 type Meteor = { x: number; y: number; vx: number; vy: number; age: number; max: number; len: number; size: number };
+type Bomb = { x: number; y: number; px: number; py: number; vx: number; vy: number; age: number; max: number; size: number; hot: number };
+type Drip = { x: number; y: number; px: number; py: number; vx: number; vy: number; age: number; max: number; size: number };
 type Crack = { s: number; lat: number; len: number; ang: number; w: number; ph: number };
 type Flow = {
   pts: Pt[];
@@ -29,6 +31,40 @@ type Flow = {
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 /** L'écran d'accueil cache les ~3,4 premières secondes : l'animation du volcan démarre juste après. */
+
+/** Bords de montagne irréguliers : on découpe chaque arête en petits segments et on les fait vibrer (toujours pareil, jamais au hasard). */
+function roughen(pts: Pt[], amp: number, seed: number, calm?: [number, number]): Pt[] {
+  let sd = seed;
+  const rnd = () => {
+    sd = (sd * 16807) % 2147483647;
+    return (sd - 1) / 2147483646;
+  };
+  const out: Pt[] = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i];
+    const [x1, y1] = pts[i + 1];
+    out.push([x0, y0]);
+    if (y0 > 250 || y1 > 250 || Math.abs(x1 - x0) < 6) continue;
+    const n = Math.max(1, Math.round(Math.hypot(x1 - x0, y1 - y0) / 4));
+    for (let k = 1; k < n; k++) {
+      const q = k / n;
+      const x = x0 + (x1 - x0) * q;
+      const calmK = calm && x > calm[0] && x < calm[1] ? 0.25 : 1;
+      const bump = (rnd() - 0.5) * 2 * amp * calmK + Math.sin(x * 0.9 + seed) * amp * 0.25 * calmK;
+      out.push([x, y0 + (y1 - y0) * q + bump]);
+    }
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+const MAIN_R = roughen(MAIN, 1.5, 4242, [182, 232]);
+const BACK_R = roughen(BACK, 2.6, 777);
+const FAR_R: Pt[] = (() => {
+  const a: Pt[] = [[-600, 260]];
+  for (let x = -600; x <= 900; x += 10) a.push([x, 166 + 9 * Math.sin(x * 0.021) + 6 * Math.sin(x * 0.057 + 1) + 3 * Math.sin(x * 0.19 + x * 0.003 * x)]);
+  a.push([900, 260]);
+  return a;
+})();
 const SPLASH = 3.4;
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const smooth = (v: number) => v * v * (3 - 2 * v);
@@ -107,6 +143,9 @@ export function VolcanoBackground() {
     const smokes: Smoke[] = [];
     const meteors: Meteor[] = [];
     let eruptAge = 99;
+    let eruptScale = 1;
+    const bombs: Bomb[] = [];
+    const drips: Drip[] = [];
     let time = 0;
     let last = 0;
     let acc = 0;
@@ -190,7 +229,7 @@ export function VolcanoBackground() {
       };
 
       // Quelques étoiles très discrètes
-      for (let i = 0; i < 46; i++) {
+      for (let i = 0; i < 110; i++) {
         const x = rnd() * w;
         const y = rnd() * h * 0.5;
         g.fillStyle = `rgba(255, 224, 200, ${0.08 + rnd() * 0.22})`;
@@ -199,11 +238,22 @@ export function VolcanoBackground() {
         g.fill();
       }
 
+      // Chaîne lointaine, très estompée
+      const far = g.createLinearGradient(0, f.y(150), 0, f.y(230));
+      far.addColorStop(0, 'rgba(70, 34, 16, 0.75)');
+      far.addColorStop(1, 'rgba(20, 10, 6, 0.9)');
+      g.fillStyle = far;
+      poly(g, FAR_R, f);
+      g.fill();
+      g.strokeStyle = 'rgba(255, 150, 70, 0.07)';
+      g.lineWidth = 1;
+      g.stroke();
+
       const back = g.createLinearGradient(0, f.y(140), 0, f.y(260));
       back.addColorStop(0, '#2a160b');
       back.addColorStop(1, '#0c0705');
       g.fillStyle = back;
-      poly(g, BACK, f);
+      poly(g, BACK_R, f);
       g.fill();
       g.strokeStyle = 'rgba(255, 130, 50, 0.12)';
       g.lineWidth = 1;
@@ -221,12 +271,12 @@ export function VolcanoBackground() {
       main.addColorStop(0.45, '#1d0f08');
       main.addColorStop(1, '#0a0705');
       g.fillStyle = main;
-      poly(g, MAIN, f);
+      poly(g, MAIN_R, f);
       g.fill();
 
       // Tout le relief est limité à la forme du volcan
       g.save();
-      poly(g, MAIN, f);
+      poly(g, MAIN_R, f);
       g.clip();
       g.save();
       g.translate(f.ox, f.oy);
@@ -273,6 +323,63 @@ export function VolcanoBackground() {
         g.fillStyle = rnd() > 0.45 ? `rgba(0, 0, 0, ${a * 1.8})` : `rgba(255, 150, 70, ${a * 0.55})`;
         g.fillRect(x, y, 0.6 + rnd() * 1.6, 0.4 + rnd() * 0.9);
       }
+
+      // Grandes facettes : des pans de roche plus clairs ou plus sombres qui partent du cratère
+      for (let i = 0; i < 9; i++) {
+        const a0 = 100 + i * 24 + rnd() * 10;
+        const a1 = a0 + 14 + rnd() * 18;
+        const lit = 207 - a0 > 20 && rnd() > 0.35;
+        g.fillStyle = lit ? `rgba(255, 140, 60, ${0.025 + rnd() * 0.03})` : `rgba(0, 0, 0, ${0.07 + rnd() * 0.08})`;
+        g.beginPath();
+        g.moveTo(205 + (rnd() - 0.5) * 6, 96);
+        g.lineTo(a0 + (rnd() - 0.5) * 20, 240);
+        g.lineTo(a1 + (rnd() - 0.5) * 20, 240);
+        g.closePath();
+        g.fill();
+      }
+      // Dizaines de ravines fines qui griffent la pente
+      for (let i = 0; i < 34; i++) {
+        const sx = 207 + (rnd() - 0.5) * 26;
+        const sy = 95 + rnd() * 16;
+        const ex = 207 + (rnd() - 0.5) * 250;
+        const ey = 200 + rnd() * 40;
+        const mx = sx + (ex - sx) * (0.3 + rnd() * 0.2) + (rnd() - 0.5) * 18;
+        const my = sy + (ey - sy) * 0.5;
+        const dark = rnd() > 0.4;
+        g.lineWidth = 0.5 + rnd() * 1.2;
+        g.strokeStyle = dark ? `rgba(0, 0, 0, ${0.18 + rnd() * 0.2})` : `rgba(255, 150, 70, ${0.05 + rnd() * 0.07})`;
+        g.beginPath();
+        g.moveTo(sx, sy);
+        g.quadraticCurveTo(mx, my, ex, ey);
+        g.stroke();
+      }
+      // Strates horizontales : les couches de coulées refroidies
+      for (let i = 0; i < 16; i++) {
+        const y = 108 + i * 9 + rnd() * 4;
+        const half = 10 + (y - 94) * 0.95;
+        g.strokeStyle = `rgba(0, 0, 0, ${0.07 + rnd() * 0.07})`;
+        g.lineWidth = 0.5 + rnd() * 0.7;
+        g.beginPath();
+        g.moveTo(207 - half, y + rnd() * 3);
+        g.bezierCurveTo(207 - half * 0.4, y + 2 + rnd() * 3, 207 + half * 0.4, y - 1 + rnd() * 3, 207 + half, y + rnd() * 3);
+        g.stroke();
+      }
+      // Gros blocs sur les pentes basses
+      for (let i = 0; i < 40; i++) {
+        const y = 150 + rnd() * 90;
+        const x = 207 + (rnd() - 0.5) * (50 + (y - 90) * 1.9);
+        const sz = 1 + rnd() * 3.2;
+        g.fillStyle = `rgba(0, 0, 0, ${0.22 + rnd() * 0.2})`;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x + sz, y + sz * 0.2);
+        g.lineTo(x + sz * 0.6, y + sz * 0.9);
+        g.lineTo(x - sz * 0.3, y + sz * 0.7);
+        g.closePath();
+        g.fill();
+        g.fillStyle = `rgba(255, 150, 70, ${0.06 + rnd() * 0.08})`;
+        g.fillRect(x - sz * 0.3, y, sz * 0.5, 0.35);
+      }
       g.restore();
       g.restore();
 
@@ -287,9 +394,17 @@ export function VolcanoBackground() {
       g.restore();
 
       // Contour discret
-      g.strokeStyle = 'rgba(255, 140, 60, 0.06)';
-      g.lineWidth = 1;
-      poly(g, MAIN.slice(4, MAIN.length - 2), f);
+      // Arête éclairée par la lueur : très fine, plus vive près du cratère
+      const top = MAIN_R.filter(([, y]) => y < 250);
+      const rim = g.createLinearGradient(f.x(60), 0, f.x(360), 0);
+      rim.addColorStop(0, 'rgba(255, 150, 70, 0)');
+      rim.addColorStop(0.42, 'rgba(255, 160, 80, 0.30)');
+      rim.addColorStop(0.55, 'rgba(255, 160, 80, 0.30)');
+      rim.addColorStop(1, 'rgba(255, 150, 70, 0)');
+      g.strokeStyle = rim;
+      g.lineWidth = 1.1;
+      g.beginPath();
+      top.forEach(([x, y], i) => (i === 0 ? g.moveTo(f.x(x), f.y(y)) : g.lineTo(f.x(x), f.y(y))));
       g.stroke();
       sil = c;
     }
@@ -355,6 +470,7 @@ export function VolcanoBackground() {
       });
     }
 
+    let dripAcc = 0;
     function drawFlows(dt: number, t: number, boost: number, surge: number) {
       if (!ctx) return;
       const f = volcanoFrame(w, h);
@@ -492,6 +608,30 @@ export function VolcanoBackground() {
           ctx.stroke();
         }
 
+        // Traînée de lave incandescente derrière le front + gouttes qui tombent
+        if (head < 1) {
+          const tailLen = fl.lin ? 0.13 : 0.07;
+          for (let i = 0; i < seg.length - 1; i++) {
+            const a = seg[i];
+            const b = seg[i + 1];
+            const q = 1 - (head - (a.s + b.s) / 2) / tailLen;
+            if (q <= 0) continue;
+            ctx.beginPath();
+            ctx.moveTo(a.p[0], a.p[1]);
+            ctx.lineTo(b.p[0], b.p[1]);
+            ctx.lineWidth = wid * (0.35 + 0.6 * q);
+            ctx.strokeStyle = `rgba(255, ${170 + 70 * q | 0}, ${70 + 110 * q | 0}, ${0.55 * q * q * dim})`;
+            ctx.stroke();
+          }
+          const tipP = seg[seg.length - 1].p;
+          dripAcc += dt * (fl.lin ? 70 : 26);
+          while (dripAcc >= 1 && drips.length < 160) {
+            dripAcc -= 1;
+            drips.push({ x: tipP[0] + rand(-0.5, 0.5), y: tipP[1], px: tipP[0], py: tipP[1], vx: rand(-5, 5), vy: rand(-6, 6), age: 0, max: rand(0.35, 0.95), size: rand(0.28, 0.7) });
+          }
+          dripAcc = Math.min(dripAcc, 1);
+        }
+
         // Le front qui avance
         if (head < 1) {
           const tip = seg[seg.length - 1].p;
@@ -503,13 +643,36 @@ export function VolcanoBackground() {
           ctx.fillRect(tip[0] - R2, tip[1] - R2, R2 * 2, R2 * 2);
         }
       }
+      // Gouttes de lave : elles s'échappent du front et retombent
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = drips.length - 1; i >= 0; i--) {
+        const d = drips[i];
+        d.age += dt;
+        if (d.age >= d.max) {
+          drips.splice(i, 1);
+          continue;
+        }
+        d.px = d.x;
+        d.py = d.y;
+        d.vy += 46 * dt;
+        d.x += d.vx * dt;
+        d.y += d.vy * dt;
+        const life = d.age / d.max;
+        const a = 1 - life;
+        ctx.strokeStyle = `rgba(255, ${150 + 90 * a | 0}, ${50 + 90 * a | 0}, ${0.85 * a})`;
+        ctx.lineWidth = d.size * (1 - 0.5 * life);
+        ctx.beginPath();
+        ctx.moveTo(d.px, d.py);
+        ctx.lineTo(d.x + 0.01, d.y);
+        ctx.stroke();
+      }
       ctx.restore();
       ctx.globalCompositeOperation = 'source-over';
     }
 
     function draw(dt: number, t: number) {
       if (!ctx || !sil) return;
-      const boost = envelope(eruptAge);
+      const boost = envelope(eruptAge) * eruptScale;
       const surge = surgeRef.current;
       const f = volcanoFrame(w, h);
       const c = craterPoint(w, h);
@@ -600,10 +763,28 @@ export function VolcanoBackground() {
 
       ctx.drawImage(sil, 0, 0, w, h);
 
+      // Brume chaude qui dérive entre les montagnes
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 5; i++) {
+        const bw = (170 + i * 26) * f.u;
+        const x = ((t * (3.2 + i * 1.1) * f.u * 0.5 + (i * (w + 2 * bw)) / 5) % (w + 2 * bw)) - bw;
+        const y = f.y(204 + (i % 3) * 9);
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(1, 0.1);
+        const fg = ctx.createRadialGradient(0, 0, 0, 0, 0, bw);
+        fg.addColorStop(0, `rgba(255, 120, 50, ${0.045 + 0.02 * Math.sin(t * 0.3 + i) + 0.03 * boost})`);
+        fg.addColorStop(1, 'rgba(255, 110, 40, 0)');
+        ctx.fillStyle = fg;
+        ctx.fillRect(-bw, -bw, bw * 2, bw * 2);
+        ctx.restore();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+
       // La lueur éclaire les pentes près du sommet (limitée à la forme du volcan)
       ctx.save();
       ctx.beginPath();
-      MAIN.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(f.x(px), f.y(py)) : ctx.lineTo(f.x(px), f.y(py))));
+      MAIN_R.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(f.x(px), f.y(py)) : ctx.lineTo(f.x(px), f.y(py))));
       ctx.closePath();
       ctx.clip();
       ctx.globalCompositeOperation = 'lighter';
@@ -698,6 +879,33 @@ export function VolcanoBackground() {
         ctx.arc(e.x, e.y, e.size, 0, 6.2832);
         ctx.fill();
       }
+      // Bombes de lave projetées par une secousse
+      for (let i = bombs.length - 1; i >= 0; i--) {
+        const b = bombs[i];
+        b.age += dt;
+        if (b.age >= b.max) {
+          bombs.splice(i, 1);
+          continue;
+        }
+        b.px = b.x;
+        b.py = b.y;
+        b.vy += 520 * f.u / 1.9 * dt;
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        const life = b.age / b.max;
+        const a = 1 - life * life;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = `rgba(255, ${140 + b.hot * 90 | 0}, ${40 + b.hot * 100 | 0}, ${0.75 * a})`;
+        ctx.lineWidth = b.size * (1 - 0.4 * life);
+        ctx.beginPath();
+        ctx.moveTo(b.px, b.py);
+        ctx.lineTo(b.x + 0.01, b.y);
+        ctx.stroke();
+        ctx.fillStyle = `rgba(255, 200, 120, ${0.2 * a})`;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.size * 2.2, 0, 6.2832);
+        ctx.fill();
+      }
       ctx.globalCompositeOperation = 'source-over';
     }
 
@@ -710,7 +918,7 @@ export function VolcanoBackground() {
       const dt = Math.min((now - last) / 1000, 0.1);
       last = now;
       acc += dt;
-      const erupting = eruptAge < 4.5;
+      const erupting = eruptAge < 4.5 || bombs.length > 0;
       // Calme : environ 30 images par seconde, pour ménager la batterie.
       if (!erupting && acc < 0.032) return;
       const step = acc;
@@ -721,7 +929,37 @@ export function VolcanoBackground() {
       draw(step, time);
     }
 
+    function onShake(e: Event) {
+      const power = Math.min(1, Math.max(0.05, (e as CustomEvent<ShakeDetail>).detail?.power ?? 0.3));
+      const cur = envelope(eruptAge) * eruptScale;
+      const next = 0.18 + 0.82 * power;
+      if (next >= cur) {
+        eruptScale = next;
+        eruptAge = 0;
+      }
+      const f = volcanoFrame(w, h);
+      const k = f.u / 1.9;
+      const n = Math.round(5 + 34 * power);
+      for (let i = 0; i < n && bombs.length < 90; i++) {
+        const a = -Math.PI / 2 + rand(-0.5, 0.5);
+        const sp = rand(120, 230 + 330 * power) * k;
+        bombs.push({
+          x: f.x(207) + rand(-8, 8) * f.u,
+          y: f.y(92),
+          px: 0,
+          py: 0,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp,
+          age: 0,
+          max: rand(0.9, 1.5) + power * 0.6,
+          size: rand(1.2, 2.6) * (0.8 + power * 0.6),
+          hot: Math.random(),
+        });
+      }
+      surgeRef.current = Math.min(1, surgeRef.current + 0.3 * power);
+    }
     function onCelebrate() {
+      eruptScale = 1;
       eruptAge = 0;
     }
     function onNavigate() {
@@ -734,6 +972,7 @@ export function VolcanoBackground() {
     if (!reduce) {
       window.addEventListener(CELEBRATE_EVENT, onCelebrate);
       window.addEventListener(NAVIGATE_EVENT, onNavigate);
+      window.addEventListener(SHAKE_EVENT, onShake);
       raf = requestAnimationFrame((t) => {
         last = t;
         loop(t);
@@ -744,6 +983,7 @@ export function VolcanoBackground() {
       window.removeEventListener('resize', resize);
       window.removeEventListener(CELEBRATE_EVENT, onCelebrate);
       window.removeEventListener(NAVIGATE_EVENT, onNavigate);
+      window.removeEventListener(SHAKE_EVENT, onShake);
     };
   }, []);
 

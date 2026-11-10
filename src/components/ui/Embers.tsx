@@ -117,7 +117,7 @@ function FireworksLayer() {
         const col = pal[Math.floor(Math.random() * pal.length)];
         add({
           x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
-          max: kind === 'willow' ? rand(1.8, 2.8) : rand(1.0, 1.8),
+          max: kind === 'willow' ? rand(1.3, 2.0) : rand(0.8, 1.4),
           size: rand(1.4, 2.8), r: col[0], g: col[1], b: col[2],
           grav: kind === 'willow' ? 150 : 80, drag: kind === 'willow' ? 1.3 : 1.7,
           pop: kind === 'crackle' && Math.random() < 0.35,
@@ -136,19 +136,19 @@ function FireworksLayer() {
       const at = (s: number, run: () => void) => jobs.push({ at: clock + s, run });
       at(0, () => {
         tapBurst(o);
-        fountains.push({ until: clock + 1.9, carry: 0 });
+        fountains.push({ until: clock + 1.15, carry: 0 });
       });
-      [0.3, 0.72, 1.1, 1.55, 2.0, 2.45].forEach((s, i) =>
+      [0.2, 0.52, 0.85, 1.2].forEach((s, i) =>
         at(s, () =>
           rocket(
             { x: c.x + rand(-30, 30), y: c.y },
             w * (i % 2 ? rand(0.5, 0.88) : rand(0.12, 0.5)),
             h * rand(0.12, 0.42),
-            rand(0.7, 0.95),
+            rand(0.6, 0.8),
           ),
         ),
       );
-      at(3.0, () => rocket({ x: c.x, y: c.y }, w / 2, h * 0.24, 0.8, true));
+      at(1.55, () => rocket({ x: c.x, y: c.y }, w / 2, h * 0.24, 0.7, true));
     }
 
     function step(dt: number) {

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
+import { ShakeEruption } from '@/components/ShakeEruption';
 import { Splash } from '@/components/Splash';
 import { TvStage } from '@/components/TvStage';
 import { VolcanoJourney } from '@/components/VolcanoJourney';
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ToastProvider>
           <EmberProvider>{children}</EmberProvider>
         </ToastProvider>
+        <ShakeEruption />
         <Splash />
       </body>
     </html>
