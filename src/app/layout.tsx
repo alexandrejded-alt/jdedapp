@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
 import { Splash } from '@/components/Splash';
+import { TvStage } from '@/components/TvStage';
 import { VolcanoJourney } from '@/components/VolcanoJourney';
 import { VolcanoBackground } from '@/components/VolcanoBackground';
 import { EmberProvider } from '@/components/ui/Embers';
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <VolcanoBackground />
+        <TvStage />
         <VolcanoJourney />
         <ToastProvider>
           <EmberProvider>{children}</EmberProvider>

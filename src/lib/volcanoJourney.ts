@@ -1,11 +1,17 @@
 import { BACK, MAIN, RIDGES, LETTERS, LETTERS_Y0, craterPoint } from './volcano';
+import { drawTunnel, TUNNEL_BACK, TUNNEL_PRE } from './timeTunnel';
 
 export const JOURNEY_EVENT = 'jded:volcano-journey';
 export const CUT_AT = 8.3;
 export const IMPACT_AT = 9.65;
 export const FIREWORKS_AT = IMPACT_AT + .38;
 export const RETURN_AT = 13.1;
-export const JOURNEY_DURATION = RETURN_AT + 1.6;
+/** Fin du duel dans son propre temps (le retour original dure 1,6 s). */
+const DUEL_END = RETURN_AT + 1.6;
+/** Durée totale : le tunnel avec le vaisseau s'ajoute avant l'aller et rallonge le retour. */
+export const JOURNEY_DURATION = TUNNEL_PRE + RETURN_AT + TUNNEL_BACK;
+/** Temps réel de la séquence -> temps du duel (le duel garde exactement son rythme). */
+const duelTime = (T: number) => (T < TUNNEL_PRE + RETURN_AT ? T - TUNNEL_PRE : RETURN_AT + (T - TUNNEL_PRE - RETURN_AT) * (1.6 / TUNNEL_BACK));
 export type JourneyGuest = { name: string; avatarUrl?: string | null };
 export type JourneyPortraits = { barber: HTMLImageElement | null; guest: HTMLImageElement | null; name: string };
 const TAU = Math.PI * 2;
@@ -483,7 +489,8 @@ function eruption(g: CanvasRenderingContext2D, age: number) {
   g.restore();
 }
 
-export function drawJourney(g: CanvasRenderingContext2D, w: number, h: number, t: number, portraits: JourneyPortraits, snapshot: HTMLCanvasElement | null) {
+export function drawJourney(g: CanvasRenderingContext2D, w: number, h: number, T: number, portraits: JourneyPortraits, snapshot: HTMLCanvasElement | null) {
+  const t = duelTime(T);
   g.clearRect(0, 0, w, h);
   const closeIn = ease((t - 1.1) / 1.25), exit = ease((t - RETURN_AT) / 1.6);
   if (t < 2.35 || t > RETURN_AT) {
@@ -519,19 +526,21 @@ export function drawJourney(g: CanvasRenderingContext2D, w: number, h: number, t
     for (const letter of LETTERS) { g.save(); g.translate(letter.x, LETTERS_Y0); g.stroke(new Path2D(letter.d)); g.restore(); } g.restore();
     g.restore();
   }
-  // Radial star streaks converge on the original volcano on both legs of the trip.
-  const flight = t < 2.2 ? clamp(t / 2.2) : t > RETURN_AT ? 1 - clamp((t - RETURN_AT) / 1.6) : 0;
-  const streakAlpha = Math.sin(flight * Math.PI);
-  if (streakAlpha > 0) {
-    const c = craterPoint(w, h), cx = c.x + (w / 2 - c.x) * flight, cy = c.y + (h * .48 - c.y) * flight;
-    g.save(); g.globalAlpha = streakAlpha * .8;
-    for (let i = 0; i < 130; i++) {
-      const a = i * 2.39996, p = ((noise(i) + t * (t > RETURN_AT ? -1.7 : 1.7)) % 1 + 1) % 1;
-      const r = (.02 + p * p) * Math.max(w, h), len = (10 + p * 170) * streakAlpha;
-      line(g, [[cx + Math.cos(a) * r, cy + Math.sin(a) * r], [cx + Math.cos(a) * (r + len), cy + Math.sin(a) * (r + len)]], i % 5 ? '#bce3ff' : '#ffbe76', .6 + p * 1.6);
-    } g.restore();
+  // Tunnel temporel (aller et retour) : même point de fuite que le zoom sur le volcan.
+  {
+    const c = craterPoint(w, h);
+    const zoom = t < 2.35 ? Math.exp(ease(t / 2.35) * 2.6) : Math.exp((1 - exit) * 2.6);
+    const vx = w / 2 + (c.x - w / 2) / zoom, vy = h * .48 + (c.y - h * .48) / zoom;
+    if (t < 2.4) {
+      const alpha = ease(T / .5) * (1 - ease((t - 1.2) / 1.15));
+      drawTunnel(g, w, h, { T, alpha, vx, vy, ship: T / (TUNNEL_PRE + 2.3), dir: 1 });
+    } else if (t > RETURN_AT) {
+      const rr = (t - RETURN_AT) / 1.6;
+      const alpha = ease(rr / .22) * (1 - ease((rr - .78) / .22));
+      drawTunnel(g, w, h, { T, alpha, vx, vy, ship: .45 + rr * .55, dir: -1 });
+    }
   }
-  g.save(); g.globalAlpha = ease(t / .4) * (1 - ease((t - JOURNEY_DURATION + .5) / .5)); g.textAlign = 'center';
+  g.save(); g.globalAlpha = ease(T / .4) * (1 - ease((t - DUEL_END + .5) / .5)); g.textAlign = 'center';
   g.fillStyle = '#ffbd73'; g.font = '700 10px sans-serif'; g.fillText('J D E D   /   C U T', w / 2, Math.max(45, h * .09));
   g.fillStyle = '#fff1df'; g.font = `700 ${Math.min(17, w / 24)}px sans-serif`;
   const caption = t < 2.35 ? 'CAP SUR LE VOLCAN' : t < 3.7 ? 'LE DUEL DU CRATÈRE' : t < 6.45 ? 'JDED VS TOI · COMBO' : t < 7.6 ? 'IL SE BRANLE...' : t < CUT_AT ? 'ÉJACULATION + CISEAUX' : t < IMPACT_AT ? 'TÊTE COUPÉE + LAIT' : t < FIREWORKS_AT + .5 ? 'PLOUF !' : t < RETURN_AT ? 'TA COUPE EST RÉSERVÉE' : 'RETOUR À LA RÉALITÉ';

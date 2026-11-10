@@ -65,10 +65,25 @@ export function ShowtimeView({ userId }: { userId: string }) {
 
   return (
     <section>
-      <div className="view-head">
-        <div className="eyebrow">Évènements</div>
+      <div className="view-head tv-head">
+        <div className="tv-top">
+          <span className="on-air">
+            <i />
+            On air
+          </span>
+          <span className="eyebrow">JDED TV Show</span>
+        </div>
         <h1>Showtime</h1>
         <p>Prends ta place pour les prochains évènements.</p>
+        <div className="tv-ticker" aria-hidden="true">
+          <div className="tv-ticker-track">
+            {[0, 1].map((k) => (
+              <span key={k}>
+                ★ En direct de chez JDED ★ Les places partent vite ★ Prends ton siège au premier rang ★ Silence, on tourne ★
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="evs" style={{ marginTop: 20 }}>
@@ -80,7 +95,7 @@ export function ShowtimeView({ userId }: { userId: string }) {
           </div>
         )}
 
-        {events.map((ev) => {
+        {events.map((ev, i) => {
           const p = dayParts(ev.date);
           const left = Math.max(0, ev.capacity - ev.seats_taken);
           const mine = seats.find((s) => s.event_id === ev.id);
@@ -98,6 +113,9 @@ export function ShowtimeView({ userId }: { userId: string }) {
           return (
             <article className="ev" key={ev.id}>
               <div className="stub">
+                <span className="ch" aria-hidden="true">
+                  CH {String(i + 1).padStart(2, '0')}
+                </span>
                 <span className="mo">{p.mo}</span>
                 <span className="dn">{p.dn}</span>
                 <span className="wd">{p.wd}</span>

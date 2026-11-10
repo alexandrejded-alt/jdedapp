@@ -384,3 +384,59 @@ html[data-dir="-1"] #page > .view-enter[data-leaving] { animation-name: leave-ri
 .volcano-journey button:focus-visible { outline: 2px solid #8fe8ff; outline-offset: 4px; }
 
 .volcano-journey .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- JDED TV SHOW : plateau télé de l'onglet Showtime ---------- */
+.tv-studio { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; opacity: 0; visibility: hidden; transition: opacity 0.45s ease, visibility 0s linear 0.45s; background: radial-gradient(120% 70% at 50% 0%, #2a1206 0%, #0d0705 55%, #060303 100%); }
+html[data-stage="tv"] .tv-studio { opacity: 1; visibility: visible; transition: opacity 0.45s ease; }
+/* mur LED : grille de points qui respire */
+.tv-wall { position: absolute; left: 0; right: 0; top: 0; height: 62%; background-image: radial-gradient(circle at center, rgba(255, 140, 40, 0.5) 0 1.4px, transparent 1.8px); background-size: 13px 13px; -webkit-mask-image: radial-gradient(90% 85% at 50% 0%, #000 0%, rgba(0,0,0,0.35) 55%, transparent 100%); mask-image: radial-gradient(90% 85% at 50% 0%, #000 0%, rgba(0,0,0,0.35) 55%, transparent 100%); animation: tv-wall 5s ease-in-out infinite alternate; }
+@keyframes tv-wall { from { opacity: 0.45; } to { opacity: 0.9; } }
+/* projecteurs qui balayent le plateau */
+.tv-beam { position: absolute; top: -8%; width: 46vmax; height: 120%; left: 50%; margin-left: -23vmax; transform-origin: 50% 0; background: linear-gradient(180deg, rgba(255, 170, 70, 0.34), rgba(255, 106, 19, 0.1) 45%, transparent 82%); -webkit-clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); mix-blend-mode: screen; filter: blur(2px); }
+.tv-beam.b1 { animation: tv-sweep-a 9s ease-in-out infinite alternate; }
+.tv-beam.b2 { animation: tv-sweep-b 11s ease-in-out infinite alternate; opacity: 0.8; }
+.tv-beam.b3 { animation: tv-sweep-c 13s ease-in-out infinite alternate; opacity: 0.55; background: linear-gradient(180deg, rgba(244, 189, 79, 0.32), transparent 78%); }
+@keyframes tv-sweep-a { from { transform: rotate(-26deg); } to { transform: rotate(14deg); } }
+@keyframes tv-sweep-b { from { transform: rotate(24deg); } to { transform: rotate(-12deg); } }
+@keyframes tv-sweep-c { from { transform: rotate(-8deg); } to { transform: rotate(30deg); } }
+/* rideaux de scène */
+.tv-curtain { position: absolute; top: 0; bottom: 0; width: min(15vw, 150px); background: repeating-linear-gradient(90deg, #1b0803 0, #4a1a07 9%, #8c3109 15%, #3b1505 24%, #1b0803 32%); box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.7); }
+.tv-curtain::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.55), transparent 30%, transparent 70%, rgba(0,0,0,0.5)); }
+.tv-curtain.l { left: 0; -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent); mask-image: linear-gradient(90deg, #000 70%, transparent); }
+.tv-curtain.r { right: 0; transform: scaleX(-1); -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent); mask-image: linear-gradient(90deg, #000 70%, transparent); }
+/* sol brillant avec grille en perspective */
+.tv-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 30%; background: linear-gradient(180deg, transparent, rgba(255, 106, 19, 0.16) 60%, rgba(255, 154, 46, 0.26)), repeating-linear-gradient(90deg, rgba(255, 170, 70, 0.13) 0 1px, transparent 1px 44px), repeating-linear-gradient(180deg, rgba(255, 170, 70, 0.1) 0 1px, transparent 1px 30px); -webkit-mask-image: linear-gradient(180deg, transparent, #000 45%); mask-image: linear-gradient(180deg, transparent, #000 45%); }
+/* lignes de balayage + vignettage */
+.tv-scan { position: absolute; inset: 0; background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px); mix-blend-mode: multiply; opacity: 0.7; }
+.tv-scan::after { content: ""; position: absolute; left: 0; right: 0; height: 22%; top: -22%; background: linear-gradient(180deg, transparent, rgba(255, 170, 70, 0.07), transparent); animation: tv-roll 7s linear infinite; }
+@keyframes tv-roll { to { top: 112%; } }
+.tv-vignette { position: absolute; inset: 0; background: radial-gradient(130% 100% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.7) 100%); }
+
+/* zap de vieille télé à l'entrée et à la sortie du plateau */
+.tv-zap { position: fixed; inset: 0; z-index: 96; pointer-events: none; opacity: 0; }
+.tv-zap::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 100%; margin-top: -50%; background: radial-gradient(80% 60% at 50% 50%, #fff4e0, #ffb55a 40%, #ff6a13 75%, #1a0a03); transform: scaleY(0.004); }
+.tv-zap.go { animation: tv-zap-fade 0.62s ease-out both; }
+.tv-zap.go::before { animation: tv-zap-open 0.62s cubic-bezier(0.7, 0, 0.2, 1) both; }
+@keyframes tv-zap-fade { 0% { opacity: 0; } 10% { opacity: 1; } 60% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes tv-zap-open { 0% { transform: scaleX(0.05) scaleY(0.004); } 28% { transform: scaleX(1) scaleY(0.006); } 62% { transform: scaleX(1) scaleY(0.5); } 100% { transform: scaleX(1) scaleY(1); } }
+
+/* en-tête du plateau */
+.tv-head { position: relative; }
+.tv-top { display: flex; align-items: center; gap: 10px; }
+.on-air { display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px 5px 8px; border-radius: 6px; background: var(--flame); color: var(--on-flame); font: 700 12px/1 var(--label); letter-spacing: 0.2em; text-transform: uppercase; box-shadow: 0 0 18px rgba(255, 106, 19, 0.65), inset 0 0 0 1px rgba(255, 255, 255, 0.25); }
+.on-air i { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: tv-blink 1.1s steps(2, jump-none) infinite; }
+@keyframes tv-blink { 0% { opacity: 1; } 100% { opacity: 0.2; } }
+.tv-head h1 { font-size: 46px; line-height: 1; letter-spacing: 0.02em; color: #fff3df; text-shadow: 0 0 6px rgba(255, 190, 110, 0.9), 0 0 18px rgba(255, 106, 19, 0.85), 0 0 42px rgba(255, 106, 19, 0.55); animation: tv-neon 4.5s infinite; }
+@keyframes tv-neon { 0%, 18%, 22%, 62%, 66%, 100% { opacity: 1; } 20%, 64% { opacity: 0.72; } }
+.tv-ticker { margin-top: 6px; overflow: hidden; border-block: 1px solid rgba(244, 189, 79, 0.45); background: linear-gradient(90deg, rgba(255, 106, 19, 0.22), rgba(255, 106, 19, 0.06) 50%, rgba(255, 106, 19, 0.22)); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.tv-ticker-track { display: flex; width: max-content; animation: tv-ticker 28s linear infinite; }
+.tv-ticker-track span { padding: 7px 0 7px 28px; white-space: nowrap; font: 700 13px/1 var(--label); letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+@keyframes tv-ticker { to { transform: translateX(-50%); } }
+
+/* cartes d'évènement façon programme télé */
+.ev { position: relative; background: linear-gradient(180deg, rgba(31, 22, 16, 0.92), rgba(15, 10, 7, 0.92)); border-color: rgba(244, 189, 79, 0.38); box-shadow: 0 0 0 1px rgba(255, 106, 19, 0.12), 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 26px rgba(255, 106, 19, 0.12); }
+.ev::before { content: ""; position: absolute; inset: 6px; border-radius: 11px; pointer-events: none; border: 1px solid rgba(244, 189, 79, 0.14); }
+.ev .stub { position: relative; background: linear-gradient(180deg, rgba(255, 106, 19, 0.42), rgba(255, 106, 19, 0.08)); }
+.ev .stub .ch { font: 700 10px/1 var(--label); letter-spacing: 0.22em; color: var(--on-flame); background: var(--gold); padding: 3px 5px 2px 7px; border-radius: 3px; margin-bottom: 6px; box-shadow: 0 0 10px rgba(244, 189, 79, 0.5); }
+.ev .stub .dn { text-shadow: 0 0 14px rgba(255, 106, 19, 0.8); }
+html[data-stage="tv"] .tabbar { border-top-color: rgba(244, 189, 79, 0.4); box-shadow: 0 -10px 30px rgba(255, 106, 19, 0.12); }
