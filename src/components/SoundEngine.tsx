@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { clic, prefetch, setLoop, setSuspended, unlock } from '@/lib/sound';
+import { clic, playWhenReady, prefetch, setLoop, setSuspended, unlock } from '@/lib/sound';
 
 const CLICKABLE = 'button, a[href], [role="tab"], summary, input[type="submit"], .btn, .time, .chip';
 
@@ -31,10 +31,13 @@ export function SoundEngine() {
     };
   }, []);
 
-  // Showtime = la radio du plateau ; l'espace admin reste silencieux ; partout ailleurs, le volcan.
+  // Showtime = la radio du plateau, une seule fois ; l'espace admin reste silencieux ; partout ailleurs, le volcan.
   useEffect(() => {
-    if (pathname.startsWith('/showtime')) setLoop('radio');
-    else if (pathname.startsWith('/admin')) setLoop(null);
+    if (pathname.startsWith('/showtime')) {
+      // La radio du plateau ne joue qu'une fois, à l'arrivée (pas en boucle) ; le volcan se tait.
+      setLoop(null);
+      playWhenReady('radio', 0.5);
+    } else if (pathname.startsWith('/admin')) setLoop(null);
     else setLoop('volcan');
   }, [pathname]);
 

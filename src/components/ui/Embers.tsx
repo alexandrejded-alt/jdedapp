@@ -26,8 +26,10 @@ export function EmberProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const burst = useCallback((origin?: Origin, banner?: string) => {
+    // Les feux d'artifice (et l'éruption) ne sont réservés qu'à une réservation confirmée.
+    if (!banner) return;
     const at = origin ?? last.current ?? { x: window.innerWidth / 2, y: window.innerHeight * 0.45 };
-    celebrate(banner ? { ...at, banner } : at);
+    celebrate({ ...at, banner });
   }, []);
 
   return (
@@ -112,14 +114,14 @@ function FireworksLayer() {
       const kinds = ['peony', 'willow', 'ring', 'crackle'] as const;
       const kind = big ? 'willow' : kinds[Math.floor(Math.random() * kinds.length)];
       const k = Math.min(w, 560) / 400;
-      const n = kind === 'ring' ? 64 : kind === 'willow' ? (big ? 100 : 60) : 70;
+      const n = kind === 'ring' ? 40 : kind === 'willow' ? (big ? 64 : 36) : 44;
       for (let i = 0; i < n; i++) {
         const a = kind === 'ring' ? (i / n) * Math.PI * 2 : rand(0, Math.PI * 2);
         const sp = (kind === 'ring' ? 190 : kind === 'willow' ? rand(90, 250) : rand(50, 270)) * k * (big ? 1.3 : 1);
         const col = pal[Math.floor(Math.random() * pal.length)];
         add({
           x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
-          max: kind === 'willow' ? rand(1.0, 1.5) : rand(0.6, 1.0),
+          max: kind === 'willow' ? rand(0.8, 1.2) : rand(0.5, 0.8),
           size: rand(1.4, 2.8), r: col[0], g: col[1], b: col[2],
           grav: kind === 'willow' ? 150 : 80, drag: kind === 'willow' ? 1.3 : 1.7,
           pop: kind === 'crackle' && Math.random() < 0.35,
@@ -138,19 +140,11 @@ function FireworksLayer() {
       const at = (s: number, run: () => void) => jobs.push({ at: clock + s, run });
       at(0, () => {
         tapBurst(o);
-        fountains.push({ until: clock + 0.7, carry: 0 });
+        fountains.push({ until: clock + 0.45, carry: 0 });
       });
-      [0.15, 0.45, 0.75].forEach((s, i) =>
-        at(s, () =>
-          rocket(
-            { x: c.x + rand(-30, 30), y: c.y },
-            w * (i % 2 ? rand(0.5, 0.88) : rand(0.12, 0.5)),
-            h * rand(0.12, 0.42),
-            rand(0.5, 0.65),
-          ),
-        ),
-      );
-      at(1.05, () => rocket({ x: c.x, y: c.y }, w / 2, h * 0.24, 0.7, true));
+      // Peu de feux : une fusée, puis le bouquet final
+      at(0.2, () => rocket({ x: c.x + rand(-30, 30), y: c.y }, w * rand(0.25, 0.75), h * rand(0.16, 0.36), 0.5));
+      at(0.7, () => rocket({ x: c.x, y: c.y }, w / 2, h * 0.24, 0.6, true));
     }
 
     function step(dt: number) {

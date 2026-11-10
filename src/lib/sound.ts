@@ -3,12 +3,13 @@
  * (le volcan, la radio de Showtime). Les navigateurs interdisent le son avant un premier toucher :
  * le moteur s'active donc au premier geste de la personne, puis tout joue normalement.
  */
-export type Sfx = 'clic_1' | 'clic_2' | 'clic_3' | 'fire_1' | 'fire_2' | 'fire_3' | 'confirme' | 'avion';
-export type Loop = 'volcan' | 'radio';
+export type Sfx = 'clic_1' | 'clic_2' | 'clic_3' | 'fire_1' | 'fire_2' | 'fire_3' | 'confirme' | 'avion' | 'radio';
+export type Loop = 'volcan';
 type Name = Sfx | Loop;
 
 const KEY = 'jded_sound';
-const LOOP_VOLUME: Record<Loop, number> = { volcan: 0.2, radio: 0.26 };
+const LOOP_VOLUME: Record<Loop, number> = { volcan: 0.2 };
+let pendingOnce: { name: Sfx; volume: number } | null = null;
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -71,6 +72,11 @@ export function unlock() {
     master.connect(ctx.destination);
     applyLoop();
   }
+  if (pendingOnce) {
+    const p = pendingOnce;
+    pendingOnce = null;
+    play(p.name, p.volume);
+  }
   if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
 }
 
@@ -92,6 +98,12 @@ export function play(name: Sfx, volume = 1, rate = 1) {
     src.connect(g).connect(m);
     src.start();
   });
+}
+
+/** Joue un son une seule fois dès que le navigateur le permet (si le son n'est pas encore réveillé, on attend le premier toucher). */
+export function playWhenReady(name: Sfx, volume = 1) {
+  if (ctx) play(name, volume);
+  else pendingOnce = { name, volume };
 }
 
 export const clic = () => play(`clic_${1 + Math.floor(Math.random() * 3)}` as Sfx, 0.55, 0.96 + Math.random() * 0.1);
