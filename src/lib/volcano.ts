@@ -119,7 +119,7 @@ export const LETTERS: { d: string; x: number }[] = [
 ];
 
 // Les coulées de lettres sont fines et un peu plus sombres (dim) : le nom se devine, il ne crie pas.
-const LET = { w: 2.3, hold: 130, D2: 40, start: 0, speed: 30, lin: true, dim: 0.78, clean: true, rough: 0.6 };
+const LET = { w: 1.6, hold: 130, D2: 40, start: 0, speed: 30, lin: true, dim: 0.45, clean: true, rough: 0.7 };
 // CUT a un plus long chemin à faire (le flanc, puis le couloir) : la lave y court un peu plus vite.
 const LET2 = { ...LET, speed: 46 };
 export const FLOWS: FlowDef[] = [
