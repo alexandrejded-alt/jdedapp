@@ -460,3 +460,30 @@ html[data-stage="tv"] .tv-studio { opacity: 1; visibility: visible; transition: 
 html[data-stage="tv"] .tabbar { border-top-color: rgba(244, 189, 79, 0.4); box-shadow: 0 -10px 30px rgba(255, 106, 19, 0.12); }
 
 .shake-ask { position: fixed; left: 14px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 40; padding: 9px 14px; border-radius: 999px; border: 1px solid rgba(244, 189, 79, 0.5); background: rgba(21, 16, 11, 0.9); color: var(--gold); font: 700 12px/1 var(--label); letter-spacing: 0.14em; text-transform: uppercase; box-shadow: 0 0 18px rgba(255, 106, 19, 0.25); }
+
+.tv-top .eyebrow { font-size: 19px; letter-spacing: 0.26em; color: var(--gold); text-shadow: 0 0 12px rgba(255, 106, 19, 0.85), 0 0 28px rgba(255, 106, 19, 0.45); }
+
+/* ---------- Cut : une typo plus affirmée (enseigne de barbier) ---------- */
+.cut-view h1, .cut-view .day-title { font-family: "Alfa Slab One", var(--display); letter-spacing: 0.015em; }
+.cut-view h1 { font-size: 40px; line-height: 1.05; }
+.cut-view .day-title { font-size: 21px; }
+.cut-view .chip .dn, .cut-view .mine-time { font-family: "Oswald", var(--label); font-weight: 600; letter-spacing: 0.02em; }
+.cut-view .chip .dn { font-size: 32px; }
+.cut-view .mine-when { font-family: "Alfa Slab One", var(--display); font-size: 19px; }
+.cut-view .time { font-family: "Oswald", var(--body); font-weight: 600; font-size: 22px; letter-spacing: 0.04em; }
+.cut-view .chip .wd, .cut-view .time small, .cut-view .eyebrow { font-family: "Oswald", var(--label); font-weight: 600; }
+
+/* ---------- Admin : fond sobre, typo de bureau ---------- */
+html[data-stage="admin"] .volcano-bg, html[data-stage="admin"] .fx-canvas { display: none; }
+html[data-stage="admin"] body { background: radial-gradient(120% 60% at 50% -10%, #1b1612 0%, #0f0d0b 55%, #0a0908 100%) fixed; }
+html[data-stage="admin"] body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background-image: linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px); background-size: 32px 32px; -webkit-mask-image: linear-gradient(180deg, #000, transparent 85%); mask-image: linear-gradient(180deg, #000, transparent 85%); }
+html[data-stage="admin"] :is(h1, h2, h3) { font-family: var(--body); font-weight: 700; letter-spacing: -0.01em; }
+html[data-stage="admin"] .view-head h1 { font-size: 28px; }
+html[data-stage="admin"] .eyebrow { color: var(--ink-dim); letter-spacing: 0.14em; }
+html[data-stage="admin"] .row, html[data-stage="admin"] .card, html[data-stage="admin"] .slot-row { background: #15120f; border-color: #2a241e; box-shadow: none; border-radius: 10px; }
+html[data-stage="admin"] .sub-title { font-family: var(--label); letter-spacing: 0.12em; }
+html[data-stage="admin"] .brand { font-family: var(--body); font-weight: 700; font-size: 18px; letter-spacing: 0.08em; color: var(--ink); }
+.row-edit { border: 0; background: transparent; color: var(--ink-dim); padding: 4px; border-radius: 6px; display: inline-grid; place-items: center; vertical-align: middle; }
+.row-edit:hover { color: var(--gold); background: rgba(255, 255, 255, 0.06); }
+.row-edit svg { width: 15px; height: 15px; }
+.rename-row { display: flex; align-items: center; gap: 10px; min-width: 0; }

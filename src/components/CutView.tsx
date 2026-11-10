@@ -86,7 +86,7 @@ export function CutView({ userId, guestName, avatarPath }: { userId: string; gue
   }
 
   return (
-    <section>
+    <section className="cut-view">
       <div className="view-head">
         <div className="eyebrow">Réserver</div>
         <h1>Cut</h1>

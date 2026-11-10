@@ -67,10 +67,6 @@ export function ShowtimeView({ userId }: { userId: string }) {
     <section>
       <div className="view-head tv-head">
         <div className="tv-top">
-          <span className="on-air">
-            <i />
-            On air
-          </span>
           <span className="eyebrow">JDED TV Show</span>
         </div>
         <h1>Showtime</h1>
@@ -79,7 +75,7 @@ export function ShowtimeView({ userId }: { userId: string }) {
           <div className="tv-ticker-track">
             {[0, 1].map((k) => (
               <span key={k}>
-                ★ En direct de chez JDED ★ Les places partent vite ★ Prends ton siège au premier rang ★ Silence, on tourne ★
+                ★ En direct de la JDEDTVSHOW ★ Les places partent vite... ★ Ton siège au premier rang t'attend ★
               </span>
             ))}
           </div>

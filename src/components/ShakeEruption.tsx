@@ -32,9 +32,9 @@ export function ShakeEruption() {
         setAsk(false);
       }
       const now = performance.now();
-      if (m < 11 || now - lastFire < 420) return;
+      if (m < 20 || now - lastFire < 700) return;
       lastFire = now;
-      const power = Math.min(1, Math.max(0.08, (m - 11) / 24));
+      const power = Math.min(1, Math.max(0.08, (m - 20) / 30));
       window.dispatchEvent(new CustomEvent<ShakeDetail>(SHAKE_EVENT, { detail: { power } }));
       try {
         navigator.vibrate?.(Math.round(18 + 50 * power));

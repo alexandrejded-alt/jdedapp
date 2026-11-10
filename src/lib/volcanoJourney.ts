@@ -492,13 +492,19 @@ function eruption(g: CanvasRenderingContext2D, age: number) {
 export function drawJourney(g: CanvasRenderingContext2D, w: number, h: number, T: number, portraits: JourneyPortraits, snapshot: HTMLCanvasElement | null) {
   const t = duelTime(T);
   g.clearRect(0, 0, w, h);
-  const closeIn = ease((t - 1.1) / 1.25), exit = ease((t - RETURN_AT) / 1.6);
+  const closeIn = ease((t - .75) / 1.6), exit = ease((t - RETURN_AT) / 1.6);
+  // Une seule caméra, un seul mouvement : le zoom commence dès la première image (sur toute la durée
+  // du saut, pas seulement sur les 2 dernières secondes) et se pose pile sur le cratère du duel.
+  const zu = clamp(T / (TUNNEL_PRE + 2.35));
+  const cam = t < 2.35 ? { zoom: Math.exp(ease(zu) * 2.6), ay: h * (.48 + .09 * ease(zu)) } : { zoom: Math.exp((1 - exit) * 2.6), ay: h * (.48 + .09 * (1 - exit)) };
   if (t < 2.35 || t > RETURN_AT) {
-    const zoom = t < 2.35 ? Math.exp(ease(t / 2.35) * 2.6) : Math.exp((1 - exit) * 2.6);
+    const { zoom, ay } = cam;
     const c = craterPoint(w, h);
-    g.save(); g.globalAlpha = t < 2.35 ? 1 - closeIn : exit;
+    // Le fond ne se creuse jamais : il fond doucement au départ, reste plein pendant tout le zoom et la scène du duel
+    // (qui apparaît par-dessus), puis se retire à la toute fin du retour pour laisser la vraie page.
+    g.save(); g.globalAlpha = t < 2.35 ? ease(T / .4) : 1 - ease(((t - RETURN_AT) / 1.6 - .8) / .2);
     g.fillStyle = '#0a0705'; g.fillRect(0, 0, w, h);
-    g.translate(w / 2 + (c.x - w / 2) / zoom, h * .48 + (c.y - h * .48) / zoom); g.scale(zoom, zoom); g.translate(-c.x, -c.y);
+    g.translate(w / 2 + (c.x - w / 2) / zoom, ay + (c.y - ay) / zoom); g.scale(zoom, zoom); g.translate(-c.x, -c.y);
     if (snapshot) g.drawImage(snapshot, 0, 0, w, h);
     g.restore();
   }
@@ -507,7 +513,8 @@ export function drawJourney(g: CanvasRenderingContext2D, w: number, h: number, T
     g.save(); g.globalAlpha = opacity;
     const sky = g.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, '#050910'); sky.addColorStop(.55, '#28151b'); sky.addColorStop(1, '#5a251b'); g.fillStyle = sky; g.fillRect(0, 0, w, h);
     for (let i = 0; i < 60; i++) ellipse(g, noise(i) * w, noise(i + 100) * h * .45, .5 + noise(i + 200), .5 + noise(i + 200), '#b8cadb66');
-    const scale = Math.min(w / 800, h / 720) * (1 + closeIn * .09);
+    // La scène du duel prolonge le zoom : elle arrive un peu plus petite et grandit jusqu'à sa taille finale.
+    const scale = Math.min(w / 800, h / 720) * (1 + closeIn * .09) * (t < RETURN_AT ? .86 + .14 * closeIn : .86 + .14 * (1 - exit));
     const cutShake = (1 - ease((t - CUT_AT) / .22)) * (t >= CUT_AT ? 1 : 0);
     const splashShake = (1 - ease((t - IMPACT_AT) / .55)) * (t >= IMPACT_AT ? 1 : 0);
     const shake = cutShake * 3 + splashShake * 6;
@@ -526,18 +533,17 @@ export function drawJourney(g: CanvasRenderingContext2D, w: number, h: number, T
     for (const letter of LETTERS) { g.save(); g.translate(letter.x, LETTERS_Y0); g.stroke(new Path2D(letter.d)); g.restore(); } g.restore();
     g.restore();
   }
-  // Tunnel temporel (aller et retour) : même point de fuite que le zoom sur le volcan.
+  // Traînées d'hyperespace (aller et retour) : même point de fuite que le zoom, donc aucun changement de plan.
   {
     const c = craterPoint(w, h);
-    const zoom = t < 2.35 ? Math.exp(ease(t / 2.35) * 2.6) : Math.exp((1 - exit) * 2.6);
-    const vx = w / 2 + (c.x - w / 2) / zoom, vy = h * .48 + (c.y - h * .48) / zoom;
+    const vx = w / 2 + (c.x - w / 2) / cam.zoom, vy = cam.ay + (c.y - cam.ay) / cam.zoom;
     if (t < 2.4) {
-      const alpha = ease(T / .5) * (1 - ease((t - 1.2) / 1.15));
-      drawTunnel(g, w, h, { T, alpha, vx, vy, ship: T / (TUNNEL_PRE + 2.3), dir: 1 });
+      const alpha = ease((zu - .08) / .4) * (1 - ease((zu - .8) / .2));
+      drawTunnel(g, w, h, { T, alpha, vx, vy, speed: ease(zu / .8), dir: 1 });
     } else if (t > RETURN_AT) {
       const rr = (t - RETURN_AT) / 1.6;
-      const alpha = ease(rr / .22) * (1 - ease((rr - .78) / .22));
-      drawTunnel(g, w, h, { T, alpha, vx, vy, ship: .45 + rr * .55, dir: -1 });
+      const alpha = ease(rr / .3) * (1 - ease((rr - .75) / .25));
+      drawTunnel(g, w, h, { T, alpha, vx, vy, speed: 1 - rr * .5, dir: -1 });
     }
   }
   g.save(); g.globalAlpha = ease(T / .4) * (1 - ease((t - DUEL_END + .5) / .5)); g.textAlign = 'center';

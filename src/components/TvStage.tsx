@@ -18,7 +18,9 @@ export function TvStage() {
     const on = pathname.startsWith('/showtime');
     const root = document.documentElement;
     const was = root.dataset.stage === 'tv';
+    // tv = plateau Showtime ; admin = espace de gestion, sobre, sans volcan
     if (on) root.dataset.stage = 'tv';
+    else if (pathname.startsWith('/admin')) root.dataset.stage = 'admin';
     else delete root.dataset.stage;
 
     // Pas de zap au tout premier affichage, ni si rien ne change.

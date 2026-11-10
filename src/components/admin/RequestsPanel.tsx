@@ -1,16 +1,20 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { friendlyError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/client';
 import { shortDate } from '@/lib/time';
 import type { AccountStatus, Profile } from '@/lib/types';
+import { useAvatarUrls } from '@/lib/useAvatarUrls';
 import { useRealtimeRefresh } from '@/lib/useRealtimeRefresh';
 import { ConfirmButton } from '../ui/ConfirmButton';
 import { useEmbers } from '../ui/Embers';
+import { Icon } from '../ui/Icons';
+import { PersonAvatar } from '../ui/PersonAvatar';
+import { BottomSheet } from '../ui/Sheets';
 import { useToast } from '../ui/Toast';
 
-const SELECT = 'id, first_name, last_name, email, status, role, created_at';
+const SELECT = 'id, first_name, last_name, email, status, role, avatar_path, created_at';
 const nameOf = (p: Pick<Profile, 'first_name' | 'last_name'>) => `${p.first_name} ${p.last_name}`.trim() || 'Sans nom';
 
 /** Demandes d'accès : accepter, refuser, retirer un accès. */
@@ -21,6 +25,7 @@ export function RequestsPanel() {
   const [rows, setRows] = useState<Profile[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [notify, setNotify] = useState<Profile | null>(null);
+  const [renaming, setRenaming] = useState<Profile | null>(null);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -49,6 +54,20 @@ export function RequestsPanel() {
     await load();
   }
 
+  const avatarPaths = useMemo(() => rows.map((r) => r.avatar_path), [rows]);
+  const avatars = useAvatarUrls(avatarPaths);
+
+  async function rename(p: Profile, first: string, last: string) {
+    const { data, error } = await supabase.from('profiles').update({ first_name: first, last_name: last }).eq('id', p.id).select('id');
+    if (error || !data || data.length === 0) {
+      toast(error ? friendlyError(error) : 'Modification refusée.', true);
+      return false;
+    }
+    toast('Nom modifié.');
+    await load();
+    return true;
+  }
+
   const pending = rows.filter((r) => r.status === 'pending');
   const approved = rows.filter((r) => r.status === 'approved');
   const refused = rows.filter((r) => r.status === 'refused');
@@ -56,10 +75,18 @@ export function RequestsPanel() {
   const row = (p: Profile, actions: React.ReactNode) => (
     <div className="row" key={p.id}>
       <div className="row-main">
-        <div>
-          <div className="row-name">{nameOf(p)}</div>
-          <div className="row-sub">
-            {p.email} · demandé le {shortDate(p.created_at)}
+        <div className="rename-row">
+          <PersonAvatar name={nameOf(p)} url={p.avatar_path ? avatars[p.avatar_path] : null} />
+          <div style={{ minWidth: 0 }}>
+            <div className="row-name">
+              {nameOf(p)}{' '}
+              <button type="button" className="row-edit" aria-label={`Modifier le nom de ${nameOf(p)}`} onClick={() => setRenaming(p)}>
+                <Icon name="edit" />
+              </button>
+            </div>
+            <div className="row-sub">
+              {p.email} · demandé le {shortDate(p.created_at)}
+            </div>
           </div>
         </div>
       </div>
@@ -76,6 +103,7 @@ export function RequestsPanel() {
       </div>
 
       {notify && <NotifyCard person={notify} onDone={() => setNotify(null)} />}
+      {renaming && <RenameSheet person={renaming} onClose={() => setRenaming(null)} onSave={rename} />}
 
       <div className="sub-title" style={{ marginTop: 6 }}>
         En attente <em>{pending.length}</em>
@@ -185,5 +213,56 @@ function NotifyCard({ person, onDone }: { person: Profile; onDone: () => void })
         C&apos;est fait
       </button>
     </div>
+  );
+}
+
+/** Renommer un client : rien que pour JDED, pour mieux s'y retrouver. */
+function RenameSheet({
+  person,
+  onClose,
+  onSave,
+}: {
+  person: Profile;
+  onClose: () => void;
+  onSave: (p: Profile, first: string, last: string) => Promise<boolean>;
+}) {
+  const [first, setFirst] = useState(person.first_name);
+  const [last, setLast] = useState(person.last_name);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    setFirst(person.first_name);
+    setLast(person.last_name);
+  }, [person]);
+  const ok = first.trim().length > 0 && !busy;
+  return (
+    <BottomSheet label="Modifier le nom" onClose={onClose}>
+      <div className="eyebrow">Client</div>
+      <h2>Modifier le nom</h2>
+      <p className="hint">Le nom change aussi dans l&apos;app du client. Pratique pour t&apos;y retrouver plus facilement. {person.email}</p>
+      <div className="field">
+        <label htmlFor="rn-first">Prénom</label>
+        <input id="rn-first" className="input" value={first} onChange={(e) => setFirst(e.target.value)} maxLength={60} autoComplete="off" />
+      </div>
+      <div className="field">
+        <label htmlFor="rn-last">Nom</label>
+        <input id="rn-last" className="input" value={last} onChange={(e) => setLast(e.target.value)} maxLength={60} autoComplete="off" />
+      </div>
+      <button
+        type="button"
+        className="btn btn-primary btn-block"
+        disabled={!ok}
+        onClick={async () => {
+          setBusy(true);
+          const done = await onSave(person, first.trim(), last.trim());
+          setBusy(false);
+          if (done) onClose();
+        }}
+      >
+        {busy ? 'Enregistrement…' : 'Enregistrer'}
+      </button>
+      <button type="button" className="btn btn-ghost btn-block" onClick={onClose} disabled={busy}>
+        Annuler
+      </button>
+    </BottomSheet>
   );
 }
