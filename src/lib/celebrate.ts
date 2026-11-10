@@ -16,7 +16,7 @@ export const prefersReducedMotion = () =>
 /** `banner` : le message de la réservation confirmée (sert à ne célébrer que les vraies réservations). */
 export function celebrate(origin: CelebrateDetail): void {
   if (prefersReducedMotion()) return;
-  // Pendant l'hologramme, plus aucun son (la vidéo non plus) : voir HoloVideo.
+  // Pendant l'hologramme, seul le son de la vidéo reste : tous les autres sons se taisent (voir HoloVideo).
   quietFor(9500);
   window.dispatchEvent(new CustomEvent<CelebrateDetail>(CELEBRATE_EVENT, { detail: origin }));
   try {
